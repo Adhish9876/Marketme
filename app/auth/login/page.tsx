@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Loader2, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,58 +30,79 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-center mb-2">Welcome Back</h1>
-        <p className="text-gray-500 text-center mb-8">Sign in to your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#121212] font-sans selection:bg-red-600 selection:text-white relative overflow-hidden">
+      
+      {/* Cinematic Noise */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              required
-            />
-          </div>
+      <div className="max-w-lg w-full relative z-10 px-6">
+        
+        {/* Card */}
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+           {/* Top Accent */}
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-red-600 to-[#1a1a1a]" />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              required
-            />
-          </div>
+           <div className="text-center mb-10">
+              <h1 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">Welcome Back</h1>
+              <p className="text-xs font-mono text-white/40 uppercase tracking-widest">Identify yourself to continue</p>
+           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
+           <form onSubmit={handleLogin} className="space-y-6">
+             <div className="space-y-2 group">
+               <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                 Email Address
+               </label>
+               <input
+                 type="email"
+                 placeholder="agent@market.me"
+                 value={email}
+                 onChange={e => setEmail(e.target.value)}
+                 className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                 required
+               />
+             </div>
 
-          <p className="text-center text-gray-600">
-            Don't have an account?{" "}
-            <span
-              className="text-blue-600 font-medium cursor-pointer hover:underline"
-              onClick={() => router.push("/auth/register")}
-            >
-              Register
-            </span>
-          </p>
-        </form>
+             <div className="space-y-2 group">
+               <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                 Password
+               </label>
+               <input
+                 type="password"
+                 placeholder="••••••••"
+                 value={password}
+                 onChange={e => setPassword(e.target.value)}
+                 className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                 required
+               />
+             </div>
+
+             <button
+               type="submit"
+               disabled={loading}
+               className="w-full py-4 bg-red-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-8 group"
+             >
+               {loading ? (
+                 <><Loader2 className="w-4 h-4 animate-spin" /> Authenticating...</>
+               ) : (
+                 <>Sign In <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+               )}
+             </button>
+
+             <div className="text-center pt-4">
+               <p className="text-white/40 text-xs">
+                 No credentials?{" "}
+                 <span
+                   className="text-red-500 font-bold uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                   onClick={() => router.push("/auth/register")}
+                 >
+                   Register Access
+                 </span>
+               </p>
+             </div>
+           </form>
+        </div>
       </div>
     </div>
   );

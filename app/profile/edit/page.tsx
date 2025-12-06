@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { ArrowLeft, Camera, Loader2, Save, User, MapPin, Phone, Hash } from "lucide-react";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -29,42 +30,34 @@ export default function EditProfilePage() {
 
   async function uploadAvatar(file: File) {
     if (!userId) return null;
-    
-    const filePath = `${userId}-${Date.now()}-${file.name}`;
+    try {
+      const filePath = `${userId}-${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(filePath, file, { upsert: true });
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      console.log(uploadError);
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        return null;
+      }
+      const { data: { publicUrl } } = supabase.storage.from("profile-images").getPublicUrl(filePath);
+      console.log("Avatar uploaded:", publicUrl);
+      return publicUrl;
+    } catch (err) {
+      console.error("Avatar upload exception:", err);
       return null;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(filePath);
-
-    return publicUrl;
   }
 
   useEffect(() => {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
-
       if (!user) {
         router.push("/auth/login");
         return;
       }
-
       setUserId(user.id);
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
+      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       if (data) {
         setUsername(data.username || "");
         setName(data.name || "");
@@ -72,195 +65,203 @@ export default function EditProfilePage() {
         setCity(data.city || "");
         setCurrentAvatarUrl(data.avatar_url || null);
       }
-
       setLoading(false);
     }
-
     loadProfile();
   }, []);
 
   async function handleUpdate(e: any) {
     e.preventDefault();
-    if (!userId) return;
-
-    setSaving(true);
-
-    let avatarUrl = currentAvatarUrl;
-
-    if (avatar) {
-      const uploaded = await uploadAvatar(avatar);
-      if (uploaded) avatarUrl = uploaded;
-    }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        username,
-        name,
-        phone,
-        city,
-        avatar_url: avatarUrl,
-      })
-      .eq("id", userId);
-
-    setSaving(false);
-
-    if (error) {
-      alert(error.message);
+    if (!userId) {
+      console.error("No userId found");
+      alert("Error: User ID not found");
       return;
     }
-
-    alert("Profile updated!");
+    setSaving(true);
+    let avatarUrl = currentAvatarUrl;
+    
+    // Only upload avatar if a new one was selected
+    if (avatar) {
+      const uploaded = await uploadAvatar(avatar);
+      if (uploaded) {
+        avatarUrl = uploaded;
+      } else {
+        console.warn("Avatar upload failed, continuing without avatar update");
+        // Continue anyway - don't fail the entire profile update
+      }
+    }
+    
+    // Only update fields that have values
+    const updateData: any = {};
+    if (username) updateData.username = username;
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (city) updateData.city = city;
+    if (avatarUrl) updateData.avatar_url = avatarUrl;
+    
+    console.log("Updating with data:", updateData);
+    
+    const { error, data } = await supabase
+      .from("profiles")
+      .update(updateData)
+      .eq("id", userId);
+    
+    console.log("Update result error:", error);
+    console.log("Update result data:", data);
+    console.log("User ID being updated:", userId);
+    
+    // Verify the update by fetching fresh data
+    if (!error) {
+      const { data: freshData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      console.log("Fresh data from DB after update:", freshData);
+    }
+    
+    setSaving(false);
+    
+    if (error) {
+      console.error("Full update error:", error);
+      alert("Error updating profile: " + error.message);
+      return;
+    }
+    
+    alert("Profile updated successfully!");
     router.push("/profile");
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
+          <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Accessing Database...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-semibold text-gray-900">Edit Profile</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#121212] text-white pb-24 font-sans selection:bg-red-600 selection:text-white relative">
+      
+      {/* Cinematic Noise */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
-          <form onSubmit={handleUpdate} className="space-y-6">
-            {/* Profile Picture */}
-            <div className="flex flex-col items-center pb-6 border-b border-gray-200">
-              <div className="relative">
-                {avatarPreview ? (
-                  <img
-                    src={avatarPreview}
-                    alt="Avatar preview"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  />
-                ) : currentAvatarUrl ? (
-                  <img
-                    src={currentAvatarUrl}
-                    alt="Current avatar"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold">
-                    {username ? username.charAt(0).toUpperCase() : name ? name.charAt(0).toUpperCase() : "?"}
-                  </div>
-                )}
-                <label
-                  htmlFor="avatar-upload"
-                  className="absolute bottom-0 right-0 bg-blue-600 text-white p-3 rounded-full cursor-pointer hover:bg-blue-700 transition-colors shadow-lg"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
+      {/* Navbar */}
+       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-white/10 py-4 shadow-lg">
+              <div className="max-w-4xl mx-10 flex items-center justify-between">
+                <button onClick={() => router.back()} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 transition-all shadow-sm group">
+                  <ArrowLeft className="w-4 mx-0 h-4 group-hover:-translate-x-1 transition-transform" />
+                  <span className="text-xs font-bold uppercase tracking-widest">Back</span>
+                </button>
+            
               </div>
-              <p className="text-sm text-gray-500 mt-3">Click to change profile picture</p>
-            </div>
+            </nav>
 
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+      {/* Main Content */}
+      <main className="relative z-10 max-w-3xl mx-auto px-6 pt-32">
+        <div className="bg-[#1a1a1a] border border-white/10 shadow-2xl rounded-3xl relative overflow-hidden">
+            {/* Red Top Accent */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-red-600 to-[#1a1a1a]" />
 
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            <div className="p-8 md:p-12">
+                <div className="mb-12 text-center">
+                    <h1 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">Edit Identity</h1>
+                    <p className="text-xs font-mono text-white/40 uppercase tracking-widest">Update your public dossier</p>
+                </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="Enter your phone number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+                <form onSubmit={handleUpdate} className="space-y-12">
+                  
+                  {/* Avatar Upload */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative group">
+                      <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-white/10 bg-black/50 shadow-inner">
+                        {avatarPreview ? (
+                          <img src={avatarPreview} className="w-full h-full object-cover" />
+                        ) : currentAvatarUrl ? (
+                          <img src={currentAvatarUrl} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white/20">
+                            {username ? username[0].toUpperCase() : "U"}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <label htmlFor="avatar-upload" className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer rounded-full scale-95 group-hover:scale-100 border border-white/20 backdrop-blur-sm">
+                        <Camera className="w-6 h-6 text-red-500 mb-2" />
+                        <span className="text-[8px] font-bold text-white uppercase tracking-widest">Upload New</span>
+                      </label>
+                      <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                    </div>
+                  </div>
 
-            {/* City */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                City
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+                  {/* Form Grid */}
+                  <div className="space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="space-y-2 group">
+                        <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                            <Hash className="w-3 h-3" /> Username
+                        </label>
+                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+                          className="w-full bg-transparent border-b border-white/10 py-2 text-white focus:border-red-600 focus:outline-none transition-all font-mono text-sm placeholder:text-white/10"
+                          placeholder="username" />
+                      </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <span className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Saving...
-                  </span>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/profile")}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
+                      <div className="space-y-2 group">
+                        <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                             <User className="w-3 h-3" /> Display Name
+                        </label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                          className="w-full bg-transparent border-b border-white/10 py-2 text-white focus:border-red-600 focus:outline-none transition-all text-xl font-bold placeholder:text-white/10"
+                          placeholder="Your Full Name" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      <div className="space-y-2 group">
+                        <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                            <Phone className="w-3 h-3" /> Contact
+                        </label>
+                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                          className="w-full bg-transparent border-b border-white/10 py-2 text-white focus:border-red-600 focus:outline-none transition-all font-mono text-sm placeholder:text-white/10"
+                          placeholder="+91..." />
+                      </div>
+
+                      <div className="space-y-2 group">
+                         <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                            <MapPin className="w-3 h-3" /> Location
+                        </label>
+                        <input type="text" value={city} onChange={(e) => setCity(e.target.value)}
+                          className="w-full bg-transparent border-b border-white/10 py-2 text-white focus:border-red-600 focus:outline-none transition-all text-base placeholder:text-white/10"
+                          placeholder="City, Country" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-8 flex flex-col md:flex-row items-center gap-4 border-t border-white/10">
+                    <button type="button" onClick={() => router.back()}
+                      className="w-full md:w-auto px-8 py-4 border border-white/10 bg-white/5 text-white/50 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all">
+                      Discard
+                    </button>
+                    <button type="submit" disabled={saving}
+                      className="w-full md:flex-1 py-4 bg-red-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group">
+                      {saving ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                      ) : (
+                          <><Save className="w-4 h-4 group-hover:scale-110 transition-transform" /> Update Dossier</>
+                      )}
+                    </button>
+                  </div>
+
+                </form>
             </div>
-          </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

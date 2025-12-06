@@ -3,146 +3,202 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { 
+  MapPin, Calendar, Mail, Package, 
+  ExternalLink, MessageCircle
+} from "lucide-react";
 
 export default function SellerProfilePage() {
   const router = useRouter();
   const params = useParams();
-
-  const [seller, setSeller] = useState<any>(null);
+  const sellerId = params.id as string;
+  
+  const [profile, setProfile] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadSellerData() {
-    const { data: profile } = await supabase
+    if (!sellerId) {
+      router.push("/");
+      return;
+    }
+
+    // Get seller profile
+    const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", params.id)
-      .single();
+      .eq("id", sellerId)
+      .maybeSingle();
 
-    setSeller(profile);
+    if (!profileData) {
+      router.push("/");
+      return;
+    }
 
-    const { data: sellerListings } = await supabase
+    setProfile(profileData);
+
+    // Get seller's listings
+    const { data: listingsData } = await supabase
       .from("listings")
       .select("*")
-      .eq("user_id", params.id);
+      .eq("user_id", sellerId)
+      .order("created_at", { ascending: false });
 
-    setListings(sellerListings || []);
+    setListings(listingsData || []);
     setLoading(false);
   }
 
   useEffect(() => {
     loadSellerData();
-  }, []);
+  }, [sellerId]);
 
-  if (loading) return <p className="pt-20 text-center">Loading...</p>;
-
-  if (!seller) return <p className="pt-20 text-center">Seller not found</p>;
-
-  return (
-    <div className="max-w-4xl mx-auto pt-10 pb-20 px-4">
-      {/* Seller Profile Card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 shadow-sm">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          {/* Avatar */}
-          {seller.avatar_url ? (
-            <img
-              src={seller.avatar_url}
-              alt={seller.username || seller.name}
-              className="w-28 h-28 rounded-full object-cover ring-4 ring-blue-100"
-            />
-          ) : (
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-blue-100">
-              {seller.username?.charAt(0)?.toUpperCase() || seller.name?.charAt(0)?.toUpperCase() || "?"}
-            </div>
-          )}
-
-          {/* Seller Info */}
-          <div className="text-center md:text-left flex-1">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {seller.username || seller.name || "Unnamed Seller"}
-            </h1>
-            {seller.name && seller.username && (
-              <p className="text-gray-500">{seller.name}</p>
-            )}
-            <div className="mt-4 flex flex-wrap gap-4 justify-center md:justify-start">
-              <div className="flex items-center gap-2 text-gray-600">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <span>{seller.phone || "Not provided"}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>{seller.city || "Not provided"}</span>
-              </div>
-            </div>
-            <div className="mt-4 text-sm text-gray-500">
-              {listings.length} listing{listings.length !== 1 ? "s" : ""}
-            </div>
-          </div>
-
-          {/* Contact Button */}
-          <button
-            onClick={() => router.push(`/chat/${seller.id}`)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            Contact Seller
-          </button>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
+          <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Loading Profile...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Listings Section */}
-      <h2 className="text-xl font-semibold mb-4 text-gray-900">Listings by this seller</h2>
+  return (
+    <div className="min-h-screen bg-[#121212] text-white pb-24 font-sans selection:bg-red-600 selection:text-white relative">
+      
+      {/* Noise Texture */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
 
-      {listings.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
-          <p className="text-gray-500">This seller has no listings yet.</p>
+      {/* Navbar */}
+      <nav className="fixed top-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-l border-white/10 py-4 px-6">
+        <div className="flex items-center justify-end gap-3">
+          <button onClick={() => router.back()} className="px-5 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all flex items-center gap-2">
+             <span className="text-xs font-bold uppercase tracking-widest">Back</span>
+          </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {listings.map(listing => (
-            <div
-              key={listing.id}
-              className="bg-white border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => router.push(`/listing/${listing.id}`)}
-            >
-              {listing.cover_image ? (
-                <img
-                  src={listing.cover_image}
-                  alt={listing.title}
-                  className="w-full h-40 object-cover"
-                />
-              ) : listing.images && listing.images.length > 0 ? (
-                <img
-                  src={listing.images[0]}
-                  alt={listing.title}
-                  className="w-full h-40 object-cover"
-                />
-              ) : (
-                <div className="w-full h-40 bg-gray-200 flex items-center justify-center">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              )}
+      </nav>
 
-              <div className="p-3">
-                <h2 className="font-semibold text-gray-900 truncate">{listing.title}</h2>
-                <p className="text-lg font-bold text-blue-600">₹{listing.price?.toLocaleString()}</p>
-              </div>
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-32 space-y-16">
+         
+         {/* --- PROFILE CARD --- */}
+         <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden group">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none group-hover:opacity-10 transition-opacity duration-700">
+               <span className="text-[12rem] font-black text-white leading-none tracking-tighter">ID</span>
             </div>
-          ))}
-        </div>
-      )}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-red-600 to-[#1a1a1a]" />
+
+            <div className="flex flex-col md:flex-row gap-10 items-start relative z-10">
+               {/* Avatar */}
+               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#121212] bg-[#121212] overflow-hidden shadow-2xl shrink-0 relative">
+                  {profile?.avatar_url ? (
+                     <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                  ) : (
+                     <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-white/20 bg-white/5">
+                        {profile?.username?.[0]?.toUpperCase() || "?"}
+                     </div>
+                  )}
+               </div>
+               
+               {/* Info */}
+               <div className="flex-1 space-y-6 pt-2">
+                  <div>
+                     <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mb-2">
+                        {profile?.name || "Anonymous Agent"}
+                     </h1>
+                     <div className="flex items-center gap-3">
+                        <p className="text-red-500 font-mono text-sm">@{profile?.username || "username_unset"}</p>
+                        <span className="text-white/20">|</span>
+                        <p className="text-white/40 font-mono text-sm uppercase">Level 1 Seller</p>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-white/60 pt-4 border-t border-white/10">
+                     <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-red-600" />
+                        <span className="uppercase tracking-wide text-xs font-bold">{profile?.city || "Location Classified"}</span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-red-600" />
+                        <span className="uppercase tracking-wide text-xs font-bold">{profile?.phone || "Contact Hidden"}</span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Contact Button */}
+               <button 
+                 onClick={() => router.push(`/chat/${sellerId}`)}
+                 className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center gap-2 whitespace-nowrap"
+               >
+                  <MessageCircle className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">Contact Seller</span>
+               </button>
+            </div>
+         </div>
+
+         {/* --- LISTINGS SECTION --- */}
+         <div className="space-y-8">
+            <div className="flex items-end justify-between border-b border-white/10 pb-4">
+               <div>
+                  <h2 className="text-2xl font-bold uppercase tracking-widest text-white">Inventory</h2>
+                  <p className="text-xs font-mono text-white/40 mt-1">ASSETS FOR SALE</p>
+               </div>
+               <div className="flex items-center gap-4">
+                  <span className="text-4xl font-black text-white/10">{listings.length.toString().padStart(2, '0')}</span>
+               </div>
+            </div>
+
+            {listings.length === 0 ? (
+               <div className="h-64 border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/30 gap-4 bg-[#1a1a1a]/50">
+                  <Package className="w-10 h-10 opacity-50" />
+                  <p className="text-xs font-bold uppercase tracking-widest">No Active Listings</p>
+               </div>
+            ) : (
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {listings.map((item) => (
+                     <div key={item.id} className="group bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden hover:border-red-600/50 transition-all hover:shadow-2xl relative">
+                        
+                        {/* Image Area */}
+                        <div onClick={() => router.push(`/listing/${item.id}`)} className="aspect-[4/3] bg-black/50 relative cursor-pointer overflow-hidden">
+                           {item.cover_image ? (
+                               <img src={item.cover_image} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+                           ) : (
+                               <div className="w-full h-full flex items-center justify-center text-white/20"><Package className="w-8 h-8"/></div>
+                           )}
+                           
+                           {item.status === 'sold' && (
+                               <div className="absolute inset-0 bg-black/80 flex items-center justify-center backdrop-blur-sm">
+                                   <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold uppercase tracking-widest rounded border border-red-400">Sold</span>
+                               </div>
+                           )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="p-4 flex flex-col gap-2">
+                           <div onClick={() => router.push(`/listing/${item.id}`)} className="cursor-pointer">
+                                <h3 className="text-white font-bold truncate text-lg group-hover:text-red-500 transition-colors">{item.title}</h3>
+                                <p className="text-white/50 font-mono text-sm">₹{item.price.toLocaleString()}</p>
+                           </div>
+
+                           {/* Action */}
+                           <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/5">
+                              <button 
+                                onClick={() => router.push(`/listing/${item.id}`)}
+                                className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                              >
+                                 <ExternalLink className="w-3 h-3" /> View
+                              </button>
+                           </div>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            )}
+         </div>
+
+      </main>
     </div>
   );
 }

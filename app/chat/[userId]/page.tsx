@@ -3,13 +3,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import io, { Socket } from "socket.io-client";
+import { ArrowLeft, Send, MoreVertical, Phone, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ChatPage() {
   const router = useRouter();
   const params = useParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<Socket | null>(null);
 
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -69,7 +69,6 @@ export default function ChatPage() {
         },
         (payload) => {
           const newMsg = payload.new;
-          // Only add if it's part of this conversation
           if (
             (newMsg.sender_id === userId && newMsg.receiver_id === params.userId) ||
             (newMsg.sender_id === params.userId && newMsg.receiver_id === userId)
@@ -103,7 +102,7 @@ export default function ChatPage() {
     });
 
     if (error) {
-      alert("Error sending message");
+      alert("Error sending transmission");
       setNewMessage(messageContent);
       return;
     }
@@ -111,27 +110,31 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading conversation...</p>
+      <div className="h-screen bg-[#121212] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-zinc-700 border-t-red-600 rounded-full animate-spin"/>
+          <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">ESTABLISHING LINK...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
-      {/* Chat Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
+    <div className="h-screen bg-[#121212] flex flex-col font-sans selection:bg-red-600 selection:text-white relative overflow-hidden">
+      
+      {/* Noise Texture */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
+
+      {/* --- HEADER --- */}
+      <div className="relative z-10 bg-[#121212]/90 backdrop-blur-md border-b border-zinc-800 py-4 px-6 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/chat")}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-600 transition-all group"
           >
-            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           </button>
 
           {/* User Info */}
@@ -140,98 +143,81 @@ export default function ChatPage() {
               {otherUser?.avatar_url ? (
                 <img
                   src={otherUser.avatar_url}
-                  alt={otherUser.username || otherUser.name}
-                  className="w-12 h-12 rounded-full object-cover"
+                  alt={otherUser.username}
+                  className="w-10 h-10 rounded-lg object-cover border border-zinc-700"
                 />
               ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                  {otherUser?.username?.charAt(0).toUpperCase() || otherUser?.name?.charAt(0).toUpperCase() || "?"}
+                <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center justify-center text-zinc-500 font-bold text-sm">
+                  {otherUser?.username?.charAt(0).toUpperCase() || "?"}
                 </div>
               )}
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+              <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-[#121212] rounded-full flex items-center justify-center">
+                 <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_8px_red]" />
+              </div>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                {otherUser?.username || otherUser?.name || "Unknown User"}
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                {otherUser?.username || "Unknown Agent"}
               </h2>
-              <p className="text-xs text-green-600">Active now</p>
+              <p className="text-[10px] text-red-500 font-mono tracking-widest uppercase">Encrypted Connection</p>
             </div>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
+          <button className="p-2 text-zinc-600 hover:text-zinc-300 transition-colors">
+            <Phone className="w-4 h-4" />
           </button>
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
+          <button className="p-2 text-zinc-600 hover:text-zinc-300 transition-colors">
+            <MoreVertical className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+      {/* --- MESSAGES AREA --- */}
+      <div className="relative z-0 flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-[#0a0a0a]">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+          <div className="flex flex-col items-center justify-center h-full text-center opacity-30">
+            <div className="w-20 h-20 border border-dashed border-zinc-600 rounded-full flex items-center justify-center mb-4">
+               <div className="w-2 h-2 bg-zinc-600 rounded-full animate-ping" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
-            <p className="text-sm text-gray-500">Start the conversation with {otherUser?.name || "this user"}!</p>
+            <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-1">Channel Open</h3>
+            <p className="text-[10px] font-mono text-zinc-500">BEGIN TRANSMISSION</p>
           </div>
         ) : (
           <>
             {messages.map((msg, index) => {
               const isFromMe = msg.sender_id === userId;
-              const showTime = index === 0 || 
-                new Date(messages[index - 1].created_at).getMinutes() !== new Date(msg.created_at).getMinutes();
-
+              
               return (
-                <div key={msg.id} className={`flex ${isFromMe ? "justify-end" : "justify-start"}`}>
-                  <div className={`flex items-end gap-2 max-w-md ${isFromMe ? "flex-row-reverse" : "flex-row"}`}>
-                    {/* Avatar for received messages */}
-                    {!isFromMe && (
-                      otherUser?.avatar_url ? (
-                        <img
-                          src={otherUser.avatar_url}
-                          alt={otherUser.username || otherUser.name}
-                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                          {otherUser?.username?.charAt(0).toUpperCase() || otherUser?.name?.charAt(0).toUpperCase() || "?"}
-                        </div>
-                      )
-                    )}
-
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  key={msg.id} 
+                  className={`flex ${isFromMe ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`flex items-end gap-3 max-w-[80%] md:max-w-md ${isFromMe ? "flex-row-reverse" : "flex-row"}`}>
+                    
+                    {/* Message Bubble */}
                     <div className={`flex flex-col ${isFromMe ? "items-end" : "items-start"}`}>
                       <div
-                        className={`px-4 py-2 rounded-2xl ${
+                        className={`px-5 py-3 text-sm font-medium leading-relaxed shadow-lg backdrop-blur-sm border ${
                           isFromMe
-                            ? "bg-blue-600 text-white rounded-br-sm"
-                            : "bg-white text-gray-900 border border-gray-200 rounded-bl-sm shadow-sm"
+                            ? "bg-red-900/20 border-red-900/50 text-red-100 rounded-2xl rounded-tr-sm"
+                            : "bg-zinc-900 border-zinc-800 text-zinc-300 rounded-2xl rounded-tl-sm"
                         }`}
                       >
-                        <p className="text-sm break-words">{msg.content}</p>
+                        <p>{msg.content}</p>
                       </div>
-                      {showTime && (
-                        <span className="text-xs text-gray-500 mt-1 px-2">
-                          {new Date(msg.created_at).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
-                      )}
+                      
+                      {/* Time Stamp */}
+                      <span className="text-[9px] font-mono text-zinc-600 mt-1 px-1 uppercase tracking-wider">
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
             <div ref={messagesEndRef} />
@@ -241,56 +227,45 @@ export default function ChatPage() {
 
       {/* Typing Indicator */}
       {isTyping && (
-        <div className="px-6 py-2">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></span>
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></span>
-            </div>
-            <span>{otherUser?.name || "User"} is typing...</span>
+        <div className="absolute bottom-24 left-6 z-20">
+          <div className="flex items-center gap-1 bg-black/50 border border-zinc-800 px-3 py-1.5 rounded-full backdrop-blur-md">
+            <span className="w-1 h-1 bg-red-500 rounded-full animate-bounce"></span>
+            <span className="w-1 h-1 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></span>
+            <span className="w-1 h-1 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></span>
+            <span className="text-[9px] font-mono text-zinc-500 uppercase ml-2">Incoming Data...</span>
           </div>
         </div>
       )}
 
-      {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 px-6 py-4">
+      {/* --- INPUT AREA --- */}
+      <div className="relative z-10 bg-[#121212] border-t border-zinc-800 px-6 py-5 pb-8">
         <div className="flex items-center gap-3">
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Type a message..."
+              placeholder="ENTER MESSAGE..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-              className="w-full px-4 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+              className="w-full pl-5 pr-12 py-4 bg-[#050505] border border-zinc-800 rounded-xl focus:outline-none focus:border-red-900 focus:ring-1 focus:ring-red-900/50 transition-all text-sm font-mono text-white placeholder:text-zinc-700 shadow-inner"
             />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+               <div className="w-1 h-1 bg-zinc-700 rounded-full" />
+               <div className="w-1 h-1 bg-zinc-700 rounded-full" />
+               <div className="w-1 h-1 bg-zinc-700 rounded-full" />
+            </div>
           </div>
-
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
 
           <button
             onClick={sendMessage}
             disabled={!newMessage.trim()}
-            className={`p-3 rounded-full transition-all ${
+            className={`p-4 rounded-xl transition-all shadow-lg flex items-center justify-center group ${
               newMessage.trim()
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-red-600 text-white hover:bg-red-700 hover:shadow-red-900/30"
+                : "bg-zinc-900 text-zinc-600 cursor-not-allowed border border-zinc-800"
             }`}
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-            </svg>
+            <Send className={`w-5 h-5 ${newMessage.trim() ? "group-hover:translate-x-0.5 group-hover:-translate-y-0.5" : ""} transition-transform`} />
           </button>
         </div>
       </div>

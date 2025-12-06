@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Camera, Loader2, UserPlus } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -11,6 +12,9 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,9 +29,8 @@ export default function RegisterPage() {
 
   async function uploadAvatar(file: File, userId: string) {
     const filePath = `${userId}-${Date.now()}-${file.name}`;
-
     const { error: uploadError } = await supabase.storage
-      .from("avatars")
+      .from("profile-images")
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
@@ -36,7 +39,7 @@ export default function RegisterPage() {
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from("avatars")
+      .from("profile-images")
       .getPublicUrl(filePath);
 
     return publicUrl;
@@ -77,136 +80,208 @@ export default function RegisterPage() {
         avatarUrl = await uploadAvatar(avatar, data.user.id);
       }
 
-      await supabase.from("profiles").insert({
+      console.log("Creating profile for user:", data.user.id);
+
+      const { error: profileError, data: profileData } = await supabase.from("profiles").insert({
         id: data.user.id,
         username: username.trim(),
-        name: "",
-        phone: "",
-        city: "",
+        name: name.trim(),
+        phone: phone.trim(),
+        city: city.trim(),
         avatar_url: avatarUrl,
-      });
+      }).select();
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        console.error("Error code:", profileError.code);
+        console.error("Error details:", profileError);
+        alert("Error creating profile: " + profileError.message);
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Profile created successfully:", profileData);
     }
 
-    alert("Registration successful! Please check your email to verify your account.");
-    router.push("/auth/login");
+    //alert("Registration successful! Please check your email to verify your account.");
+    router.push("/");
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-center mb-2">Create Account</h1>
-        <p className="text-gray-500 text-center mb-8">Sign up to get started</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#121212] font-sans selection:bg-red-600 selection:text-white relative overflow-hidden py-12 w-50px">
+      
+      {/* Cinematic Noise Overlay */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
 
-        <form onSubmit={handleRegister} className="space-y-5">
-          {/* Profile Picture */}
-          <div className="flex flex-col items-center">
-            <div className="relative">
-              {avatarPreview ? (
-                <img
-                  src={avatarPreview}
-                  alt="Avatar preview"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
-                  {username ? username.charAt(0).toUpperCase() : "?"}
-                </div>
-              )}
-              <label
-                htmlFor="avatar-upload"
-                className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors shadow-lg"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </label>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </div>
-            <p className="text-sm text-gray-500 mt-2">Upload profile picture</p>
-          </div>
+      <div className="max-w-lg w-full relative z-10 px-6">
+        
+        {/* Main Card */}
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
+           {/* Top Red Accent Line */}
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-red-600 to-[#1a1a1a]" />
 
-          {/* Username */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Username
-            </label>
-            <input
-              type="text"
-              placeholder="Choose a username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              required
-            />
-          </div>
+           <div className="text-center mb-10">
+              <h1 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">Initialize</h1>
+              <p className="text-xs font-mono text-white/40 uppercase tracking-widest">Create new seller identity</p>
+           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              required
-            />
-          </div>
+           <form onSubmit={handleRegister} className="space-y-6">
+             
+             {/* Avatar Circle */}
+             <div className="flex flex-col items-center">
+               <div className="relative group">
+                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 bg-black/50 shadow-inner">
+                   {avatarPreview ? (
+                     <img src={avatarPreview} className="w-full h-full object-cover" />
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-white/20">
+                       {username ? username.charAt(0).toUpperCase() : "?"}
+                     </div>
+                   )}
+                 </div>
+                 
+                 <label htmlFor="avatar-upload" className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer rounded-full scale-95 group-hover:scale-100 border border-white/20 backdrop-blur-sm">
+                   <Camera className="w-5 h-5 text-red-500 mb-1" />
+                   <span className="text-[6px] font-bold text-white uppercase tracking-widest">Upload</span>
+                 </label>
+                 <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+               </div>
+               <p className="text-[10px] font-mono text-white/30 mt-3 uppercase tracking-widest">Set Profile Image</p>
+             </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Create a password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              required
-            />
-          </div>
+             {/* Username */}
+             <div className="space-y-2 group">
+               <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                 Username
+               </label>
+               <input
+                 type="text"
+                 placeholder="Codename"
+                 value={username}
+                 onChange={e => setUsername(e.target.value)}
+                 className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                 required
+               />
+             </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              required
-            />
-          </div>
+             {/* Full Name */}
+             <div className="space-y-2 group">
+               <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                 Full Name
+               </label>
+               <input
+                 type="text"
+                 placeholder="Your full name"
+                 value={name}
+                 onChange={e => setName(e.target.value)}
+                 className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+               />
+             </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
+             {/* Email */}
+             <div className="space-y-2 group">
+               <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                 Email Address
+               </label>
+               <input
+                 type="email"
+                 placeholder="agent@market.me"
+                 value={email}
+                 onChange={e => setEmail(e.target.value)}
+                 className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                 required
+               />
+             </div>
 
-          <p className="text-center text-gray-600">
-            Already have an account?{" "}
-            <span
-              className="text-blue-600 font-medium cursor-pointer hover:underline"
-              onClick={() => router.push("/auth/login")}
-            >
-              Sign In
-            </span>
-          </p>
-        </form>
+             {/* Phone & City Grid */}
+             <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                     Phone
+                   </label>
+                   <input
+                     type="tel"
+                     placeholder="+91 98765 43210"
+                     value={phone}
+                     onChange={e => setPhone(e.target.value)}
+                     className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                   />
+                 </div>
+
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                     City
+                   </label>
+                   <input
+                     type="text"
+                     placeholder="Mumbai"
+                     value={city}
+                     onChange={e => setCity(e.target.value)}
+                     className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                   />
+                 </div>
+             </div>
+
+             {/* Password Grid */}
+             <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                     Password
+                   </label>
+                   <input
+                     type="password"
+                     placeholder="••••••"
+                     value={password}
+                     onChange={e => setPassword(e.target.value)}
+                     className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                     required
+                   />
+                 </div>
+
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 group-focus-within:text-red-500 transition-colors">
+                     Confirm
+                   </label>
+                   <input
+                     type="password"
+                     placeholder="••••••"
+                     value={confirmPassword}
+                     onChange={e => setConfirmPassword(e.target.value)}
+                     className="w-full bg-transparent border-b border-white/10 py-3 text-white placeholder:text-white/10 focus:border-red-600 focus:outline-none transition-all font-mono text-sm"
+                     required
+                   />
+                 </div>
+             </div>
+
+             {/* Submit Button */}
+             <button
+               type="submit"
+               disabled={loading}
+               className="w-full py-4 bg-red-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-8 group"
+             >
+               {loading ? (
+                 <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+               ) : (
+                 <>Create Account <UserPlus className="w-4 h-4 group-hover:scale-110 transition-transform" /></>
+               )}
+             </button>
+
+             {/* Footer Link */}
+             <div className="text-center pt-4">
+               <p className="text-white/40 text-xs">
+                 Existing operative?{" "}
+                 <span
+                   className="text-red-500 font-bold uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                   onClick={() => router.push("/auth/login")}
+                 >
+                   Sign In
+                 </span>
+               </p>
+             </div>
+           </form>
+        </div>
       </div>
     </div>
   );

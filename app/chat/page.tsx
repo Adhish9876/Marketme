@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { ArrowLeft, MessageSquare, ChevronRight, User } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function ChatListPage() {
   const router = useRouter();
@@ -43,7 +45,6 @@ export default function ChatListPage() {
       }
     });
 
-    // Load profiles for all users
     if (uniqueUserIds.size > 0) {
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -65,100 +66,133 @@ export default function ChatListPage() {
 
   useEffect(() => {
     loadChats();
+
+    // Real-time subscription for new messages
+    const channel = supabase
+      .channel('chat_list_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        async (payload) => {
+          // Check if the new message involves the current user
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && (payload.new.sender_id === user.id || payload.new.receiver_id === user.id)) {
+             loadChats();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chats...</p>
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-zinc-700 border-t-red-600 rounded-full animate-spin"/>
+          <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">SCANNING FREQUENCIES...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#121212] font-sans selection:bg-red-600 selection:text-white relative pb-20">
+      
+      {/* Noise Texture */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
+
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="bg-[#121212]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-6 sticky top-0 z-10 flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/")}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-600 transition-all group"
           >
-            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           </button>
-          <h1 className="text-2xl font-semibold text-gray-900">Messages</h1>
+          <div>
+             <h1 className="text-lg font-black text-white uppercase tracking-wider">Comms</h1>
+             <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Active Channels: {convos.length}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-          <span className="text-sm text-gray-600">Online</span>
+          <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_8px_red]"></span>
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">ONLINE</span>
         </div>
       </div>
 
       {/* Chat List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="px-6 py-8 max-w-3xl mx-auto space-y-4 relative z-0">
         {convos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <svg className="w-20 h-20 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations yet</h3>
-            <p className="text-sm text-gray-500">Start chatting with sellers or buyers!</p>
+          <div className="flex flex-col items-center justify-center mt-20 text-center opacity-40">
+            <div className="w-24 h-24 border border-dashed border-zinc-600 rounded-full flex items-center justify-center mb-6">
+               <MessageSquare className="w-8 h-8 text-zinc-500" />
+            </div>
+            <h3 className="text-lg font-bold text-white uppercase tracking-widest mb-2">Silence Detected</h3>
+            <p className="text-xs font-mono text-zinc-500">NO ACTIVE TRANSMISSIONS FOUND.</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {convos.map(msg => {
+          <div className="space-y-3">
+            {convos.map((msg, i) => {
               const otherId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
               const profile = profiles.get(otherId);
               const isFromMe = msg.sender_id === userId;
               
               return (
-                <div
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
                   key={msg.id}
-                  className="px-6 py-4 hover:bg-gray-100 cursor-pointer transition-colors flex items-center gap-4"
                   onClick={() => router.push(`/chat/${otherId}`)}
+                  className="bg-[#0a0a0a] border border-zinc-800 hover:border-zinc-600 rounded-xl p-4 cursor-pointer transition-all hover:bg-zinc-900 group shadow-sm flex items-center gap-4"
                 >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
                     {profile?.avatar_url ? (
                       <img
                         src={profile.avatar_url}
-                        alt={profile.name || profile.username}
-                        className="w-14 h-14 rounded-full object-cover"
+                        alt={profile.name}
+                        className="w-12 h-12 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all border border-zinc-700"
                       />
                     ) : (
-                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                        {profile?.username?.charAt(0).toUpperCase() || profile?.name?.charAt(0).toUpperCase() || "?"}
+                      <div className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center justify-center text-zinc-500 font-bold text-lg">
+                        {profile?.username?.charAt(0).toUpperCase() || "?"}
                       </div>
                     )}
-                    <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
+                    <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-[#0a0a0a] rounded-full flex items-center justify-center">
+                       <span className="w-1.5 h-1.5 bg-red-600 rounded-full" />
+                    </span>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-base font-semibold text-gray-900 truncate">
-                        {profile?.name || "Unknown User"}
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wide group-hover:text-red-500 transition-colors truncate">
+                        {profile?.name || "Unknown Agent"}
                       </h3>
-                      <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                      <span className="text-[10px] font-mono text-zinc-600 flex-shrink-0">
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 truncate">
-                      {isFromMe && <span className="text-blue-600 font-medium">You: </span>}
+                    <p className="text-xs text-zinc-400 truncate font-medium flex items-center gap-1">
+                      {isFromMe && <span className="text-red-500 font-mono text-[10px] uppercase">YOU:</span>}
                       {msg.content}
                     </p>
                   </div>
 
-                  {/* Unread indicator */}
-                  {!isFromMe && (
-                    <div className="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0"></div>
-                  )}
-                </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-white transition-colors" />
+                </motion.div>
               );
             })}
           </div>

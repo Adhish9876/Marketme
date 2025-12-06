@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from "../components/Navbar";
+//import { ThemeProvider } from "@/components/theme-provider"
 
 
 export const metadata: Metadata = {
@@ -15,13 +16,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-  <Navbar />
-  <div className="min-h-screen bg-gray-100">
-    {children}
-  </div>
-</body>
-
+      <body className="bg-[#EBEAE5] transition-colors">
+       
+        <div className="min-h-screen bg-[#EBEAE5]">
+          {children}
+        </div>
+      
+      </body>
     </html>
   )
 }

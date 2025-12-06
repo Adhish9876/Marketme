@@ -1,318 +1,334 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
+import { 
+  ArrowLeft, MapPin, Flag, ChevronLeft, ChevronRight, 
+  MessageSquare, Shield, Share2, CheckCircle2,
+  Box, Layers, Calendar, ArrowUpRight
+} from "lucide-react";
+import { motion } from "framer-motion";
+import SaveButton from "@/components/SaveButton";
+import GoogleMapComponent from "@/components/GoogleMapComponent";
 
-export default function ListingDetails({ params }: any) {
+type Listing = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  category: string;
+  condition: string;
+  status: string;
+  user_id: string;
+  created_at: string;
+  cover_image?: string;
+  banner_image?: string;
+  gallery_images?: string[];
+  images?: string[];
+  latitude?: number;
+  longitude?: number;
+};
+
+type Seller = {
+  id: string;
+  name: string;
+  username: string;
+  city: string;
+  avatar_url?: string;
+  verified: boolean;
+};
+
+// --- Dynamic Map Import ---
+const ListingMap = dynamic(() => import("@/components/ListingMap"), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] w-full bg-[#0a0a0a] border border-white/10 flex flex-col items-center justify-center gap-2 rounded-[2.5rem]">
+      <div className="w-6 h-6 border-2 border-white/20 border-t-red-600 rounded-full animate-spin" />
+      <span className="font-mono text-[10px] text-white/30 uppercase tracking-widest">Map Loading...</span>
+    </div>
+  )
+});
+
+export default function ListingDetailsPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
 
-  const [listing, setListing] = useState<any>(null);
-  const [seller, setSeller] = useState<any>(null);
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [seller, setSeller] = useState<Seller | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [reportText, setReportText] = useState("");
   const [imgIndex, setImgIndex] = useState(0);
-  const [allImages, setAllImages] = useState<string[]>([]);
 
-  function prevImage() {
-    if (!allImages.length) return;
-    setImgIndex((imgIndex - 1 + allImages.length) % allImages.length);
-  }
-
-  function nextImage() {
-    if (!allImages.length) return;
-    setImgIndex((imgIndex + 1) % allImages.length);
-  }
-
-  async function fetchListing() {
-    const { data, error } = await supabase
-      .from("listings")
-      .select("*, cover_image, banner_image, gallery_images")
-      .eq("id", params.id)
-      .single();
-
-    if (error || !data) {
-      setLoading(false);
-      return;
-    }
-
-    setListing(data);
-    
-    // Combine all images into one array for carousel
-    const images: string[] = [];
-    if (data.cover_image) images.push(data.cover_image);
-    if (data.banner_image) images.push(data.banner_image);
-    if (data.gallery_images && Array.isArray(data.gallery_images)) {
-      images.push(...data.gallery_images);
-    }
-    setAllImages(images);
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", data.user_id)
-      .single();
-
-    setSeller(profile);
-    setLoading(false);
-  }
-
+  // --- Data Fetching ---
   useEffect(() => {
-    fetchListing();
-  }, []);
+    async function fetchData() {
+      if (!id) return;
+      try {
+        const { data: listingData, error: listingError } = await supabase
+          .from("listings")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-  async function submitReport() {
-    const { data: { user } } = await supabase.auth.getUser();
+        if (listingError) throw new Error("Listing not found");
+        setListing(listingData as Listing);
 
-    if (!user) {
-      alert("Please login first");
-      router.push("/login");
-      return;
+        const { data: sellerData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", listingData.user_id)
+          .maybeSingle();
+
+        if (sellerData) {
+          setSeller({
+            id: sellerData.id,
+            name: sellerData.name || "Unknown",
+            username: sellerData.username || "User",
+            city: sellerData.city || "Unknown",
+            avatar_url: sellerData.avatar_url,
+            verified: sellerData.is_admin || false,
+          });
+        } else {
+           setSeller({ id: listingData.user_id, name: "Unknown", username: "user", city: "Unknown", verified: false });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
+    fetchData();
+  }, [id]);
 
-    if (reportText.trim() === "") {
-      alert("Please enter a reason");
-      return;
-    }
+  // --- Logic ---
+  const allImages = listing ? [
+    ...(listing.cover_image ? [listing.cover_image] : []),
+    ...(listing.banner_image ? [listing.banner_image] : []),
+    ...(listing.gallery_images || []),
+    ...(listing.images || []),
+  ].filter(Boolean) : [];
 
-    const { error } = await supabase.from("reports").insert({
-      listing_id: listing.id,
-      reporter_id: user.id,
-      reason: reportText,
-    });
+  const scrollImage = (dir: 'next' | 'prev') => {
+    if (dir === 'next') setImgIndex((c) => (c + 1) % allImages.length);
+    else setImgIndex((c) => (c - 1 + allImages.length) % allImages.length);
+  };
 
-    if (error) {
-      alert("Could not submit report");
-      return;
-    }
-
-    alert("Report submitted");
-    setReportOpen(false);
-    setReportText("");
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!listing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 text-gray-800">
-        Listing not found.
-      </div>
-    );
-  }
-
- return (
-  <div className="min-h-screen bg-neutral-50 pb-10">
-
-    {/* Back Button */}
-    <button
-      onClick={() => router.back()}
-      className="fixed top-5 left-5 z-50 bg-white text-gray-800 p-2.5 rounded-lg shadow-sm hover:shadow transition border border-gray-200"
-    >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-    </button>
-
-    <div className="max-w-7xl mx-auto px-6 pt-10">
-
-      {/* GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* ---------------- LEFT SECTION ---------------- */}
-        <div className="lg:col-span-2 space-y-4">
-
-          {/* MAIN IMAGE */}
-          <div className="relative w-full h-[480px] bg-white border rounded-xl overflow-hidden shadow-sm">
-            {allImages.length > 0 ? (
-              <>
-                <img
-                  src={allImages[imgIndex]}
-                  alt="Listing"
-                  className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300"
-                />
-
-                {/* LEFT ARROW */}
-                {allImages.length > 1 && (
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 p-3 rounded-full shadow hover:bg-white transition"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                )}
-
-                {/* RIGHT ARROW */}
-                {allImages.length > 1 && (
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 p-3 rounded-full shadow hover:bg-white transition"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className="flex justify-center items-center h-full text-gray-400">
-                No images uploaded
-              </div>
-            )}
-          </div>
-
-          {/* THUMBNAILS */}
-          {allImages.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto py-1">
-              {allImages.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  onClick={() => setImgIndex(i)}
-                  className={`w-24 h-20 rounded-lg object-cover cursor-pointer border ${
-                    imgIndex === i ? "border-blue-600 shadow-sm" : "border-transparent"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* DESCRIPTION */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">{listing.title}</h1>
-            </div>
-
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {listing.description}
-            </p>
-
-            {/* LOCATION & REPORT */}
-            <div className="pt-4 border-t flex items-center">
-              <div className="flex items-center gap-2 text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {listing.location}
-              </div>
-
-              <button
-                onClick={() => setReportOpen(true)}
-                className="ml-auto text-gray-500 hover:text-red-600 text-sm"
-              >
-                Report
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        {/* ---------------- RIGHT SECTION (STICKY SIDEBAR) ---------------- */}
-        <div className="lg:col-span-1 lg:sticky lg:top-24 space-y-5">
-
-          {/* PRICE BOX */}
-          <div className="bg-white rounded-xl border shadow-sm p-5">
-            <div className="text-xs text-gray-500">PRICE</div>
-            <div className="text-4xl font-semibold text-gray-900 mt-1">
-              ₹{listing.price.toLocaleString()}
-            </div>
-          </div>
-
-          {/* CATEGORY + CONDITION */}
-          <div className="bg-white rounded-xl border shadow-sm p-5 space-y-3">
-            <div>
-              <div className="text-xs text-gray-500">Category</div>
-              <div className="font-medium text-gray-900">{listing.category}</div>
-            </div>
-
-            <div>
-              <div className="text-xs text-gray-500">Condition</div>
-              <div className="font-medium text-gray-900">{listing.condition}</div>
-            </div>
-          </div>
-
-          {/* SELLER INFO */}
-          <div className="bg-white rounded-xl border shadow-sm p-5 space-y-5">
-
-            <div className="flex items-center gap-4">
-              {/* Avatar circle */}
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold rounded-full flex items-center justify-center text-xl">
-                {seller?.name ? seller.name[0].toUpperCase() : "?"}
-              </div>
-
-              <div>
-                <div className="font-semibold text-gray-900">{seller?.name || "Unknown Seller"}</div>
-                <div className="text-sm text-gray-500">{seller?.city || "Location not set"}</div>
-              </div>
-            </div>
-
-            {/* CHAT */}
-            {listing.status === "sold" ? (
-              <div className="text-center text-red-600 font-medium">
-                Item Sold
-              </div>
-            ) : (
-              <button
-                onClick={() => router.push(`/chat/${listing.user_id}`)}
-                className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
-              >
-                Chat with Seller
-              </button>
-            )}
-          </div>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+         <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
+         <p className="font-mono text-xs uppercase tracking-widest text-white/30">Loading Asset Data...</p>
       </div>
     </div>
+  );
 
-    {/* REPORT MODAL */}
-    {reportOpen && (
-      <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
-        <div className="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-          <h3 className="text-lg font-semibold text-gray-900">Report Listing</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Please describe the issue with this listing.
-          </p>
+  if (!listing || !seller) return null;
 
-          <textarea
-            value={reportText}
-            onChange={(e) => setReportText(e.target.value)}
-            className="w-full mt-4 p-3 border rounded-lg text-sm"
-            rows={4}
-          />
+  return (
+    <div className="min-h-screen bg-[#121212] text-white font-sans selection:bg-red-600 selection:text-white pb-32 overflow-x-hidden">
+      
+      {/* Cinematic Noise Overlay */}
+      <div className="fixed inset-0 pointer-events-none z-2 opacity-5"
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' fill='white'/%3E%3C/svg%3E")`}} 
+      />
 
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={() => setReportOpen(false)}
-              className="w-1/2 py-2 rounded border text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+      {/* --- FLOATING NAVBAR --- */}
+      <nav className="absolute top-0 left-0 right-0 z-[100] px-6 py-6 flex justify-between items-start pointer-events-none">
+        <button 
+          onClick={() => router.back()}
+          className="pointer-events-auto flex items-center gap-3 px-6 py-3 bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all group shadow-2xl"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Return</span>
+        </button>
 
-            <button
-              onClick={submitReport}
-              className="w-1/2 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Submit
-            </button>
-          </div>
+        <div className="pointer-events-auto flex items-center gap-3">
+           <button className="w-12 h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl">
+              <Share2 className="w-4 h-4" />
+           </button>
+           <div className="bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+              <SaveButton listingId={listing.id} />
+           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      </nav>
 
+      {/* --- MAIN CONTENT --- */}
+      <main className="relative my-5 z-10 pt-20 px-4 sm:px-8 max-w-[1800px] mx-auto">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+          
+          {/* --- LEFT COLUMN: VISUALS (Cinematic) --- */}
+          <div className="lg:col-span-8 space-y-5">
+            
+            {/* 1. Main Projector Screen */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="relative aspect-[16/10] w-full bg-[#0a0a0a] rounded-[2.5rem] border border-white/10 overflow-hidden shadow-[0_20px_50px_-20px_rgba(0,0,0,0.7)] group"
+            >
+               {allImages.length > 0 ? (
+                 <>
+                   <img 
+                     src={allImages[imgIndex]} 
+                     className="w-full h-full object-cover opacity-90 transition-transform duration-1000 ease-out group-hover:scale-105"
+                   />
+                   
+                   {/* Cinematic Gradient Vignette */}
+                   <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent opacity-60" />
+                   
+                   {/* Navigation Arrows (Hover) */}
+                   {allImages.length > 1 && (
+                     <div className="absolute inset-0 flex items-center justify-between p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button onClick={() => scrollImage('prev')} className="w-14 h-14 bg-black/40 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-600 hover:border-red-600 transition-all">
+                          <ChevronLeft className="w-6 h-6" />
+                        </button>
+                        <button onClick={() => scrollImage('next')} className="w-14 h-14 bg-black/40 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-600 hover:border-red-600 transition-all">
+                          <ChevronRight className="w-6 h-6" />
+                        </button>
+                     </div>
+                   )}
 
+                   {/* Tech Overlay: Counter */}
+                   <div className="absolute bottom-8 right-8 px-5 py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-3">
+                      <div className="flex gap-1">
+                        {allImages.map((_, i) => (
+                          <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === imgIndex ? 'bg-red-600' : 'bg-white/20'}`} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-bold font-mono tracking-widest border-l border-white/20 pl-3 text-white/80">
+                        IMG {String(imgIndex + 1).padStart(2, '0')}
+                      </span>
+                   </div>
+                 </>
+               ) : (
+                 <div className="flex items-center justify-center h-full text-white/20 font-mono text-xs uppercase tracking-widest flex-col gap-4">
+                    <Box className="w-10 h-10 opacity-20" />
+                    <span>No Visual Data Available</span>
+                 </div>
+               )}
+            </motion.div>
+
+            {/* 2. Specs Grid (Data Visualization) */}
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-16">
+
+               {[
+                 { label: "Category", value: listing.category, icon: Layers },
+                 { label: "Condition", value: listing.condition, icon: Box },
+                 { label: "Listed", value: new Date(listing.created_at).toLocaleDateString(), icon: Calendar },
+                 { label: "Location", value: listing.location, icon: MapPin },
+               ].map((item, i) => (
+                 <div key={i} className="bg-[#181818] border border-white/5 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/20 transition-colors">
+                    <item.icon className="w-5 h-5 text-red-600" />
+                    <div>
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{item.label}</p>
+                       <p className="text-sm font-bold text-white mt-1 truncate">{item.value}</p>
+                    </div>
+                 </div>
+               ))}
+            </div>
+
+            {/* 3. Description (Typography with Border) */}
+            
+          </div>
+
+          {/* --- RIGHT: HUD (Sticky Actions) --- */}
+          <div className="lg:col-span-4 relative">
+             <div className="sticky top-8 space-y-8">
+                
+                {/* 1. The "Price Ticket" HUD (Fixed Colors) */}
+                <div className="bg-[#181818] border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl">
+                   {/* Glowing Top Line */}
+                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-red-900 to-transparent opacity-80" />
+                   
+                   <div className="flex justify-between items-start mb-8">
+                      <div>
+                         <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Valuation</p>
+                         <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-light text-white/40">₹</span>
+                            <span className="text-6xl font-black text-white tracking-tighter">
+                              {listing.price.toLocaleString()}
+                            </span>
+                         </div>
+                      </div>
+                      {listing.status === "sold" && (
+                         <span className="bg-red-600/20 text-red-500 border border-red-600/50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                            Sold
+                         </span>
+                      )}
+                   </div>
+
+                   <div className="space-y-4">
+                      {listing.status === "sold" ? (
+                         <button disabled className="w-full py-5 bg-[#222] border border-white/5 text-white/30 font-bold text-xs uppercase tracking-[0.2em] rounded-2xl cursor-not-allowed">
+                            Acquisition Closed
+                         </button>
+                      ) : (
+                         <button 
+                           onClick={() => router.push(`/chat/${listing.user_id}`)}
+                           className="w-full py-5 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-lg flex items-center justify-center gap-3 group"
+                         >
+                            <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            message
+                         </button>
+                      )}
+                      
+                      <div className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                         <Shield className="w-3 h-3" /> Secure Protocol
+                      </div>
+                   </div>
+                </div>
+
+                {/* 2. Seller Dossier */}
+                <div className="bg-[#121212] border border-white/10 rounded-[2.5rem] p-2 flex items-center gap-4 hover:bg-[#181818] transition-colors group cursor-pointer">
+                   <div className="h-16 w-16 bg-[#222] rounded-[2rem] flex items-center justify-center border border-white/5 overflow-hidden group-hover:border-white/20 transition-colors">
+                      {seller.avatar_url ? (
+                         <img src={seller.avatar_url} className="w-full h-full object-cover" />
+                      ) : (
+                         <span className="text-xl font-serif text-white/40">{seller.name.charAt(0)}</span>
+                      )}
+                   </div>
+                   
+                   <div className="flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Source ID</p>
+                       <div className="flex items-center gap-2 cursor-pointer" onClick={()=>{router.push(`/seller/${seller.id}`)}}>
+                         <h4 className="text-lg font-bold text-white">{seller.name}</h4>
+                         {seller.verified && <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500/20" />}
+                      </div>
+                   </div>
+
+                   <div className="pr-6">
+                      <ArrowUpRight className="w-5 h-5 text-white/30 group-hover:text-white transition-colors" />
+                   </div>
+                </div>
+
+                {/* 3. Description Section */}
+                
+                   <div className="p-8 border border-white/10 rounded-[2rem] bg-[#1a1a1a]/50">
+               <h2 className="text-3xl font-black mb-6 tracking-tight text-white/90">Description</h2>
+               <div className="prose prose-invert prose-lg max-w-none">
+                 <p className="text-white/60 font-semibold leading-relaxed whitespace-pre-line text-md">
+                   {listing.description}
+                 </p>
+               </div>
+            </div>
+                
+
+                {/* 4. Report Link */}
+                <div className="text-center">
+                   <button className="text-[10px] font-bold uppercase tracking-widest text-white/20 hover:text-red-600 flex items-center justify-center gap-2 transition-colors py-2">
+                      <Flag className="w-3 h-3" /> Report Anomaly
+                   </button>
+                </div>
+
+             </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
 }

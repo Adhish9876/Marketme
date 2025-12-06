@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { 
+  ArrowLeft, Edit, MapPin, Calendar, Mail, Package, 
+  Trash2, ExternalLink, Plus 
+} from "lucide-react";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -12,7 +17,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   async function loadProfileData() {
-    // Get current user
     const { data: { user: authUser } } = await supabase.auth.getUser();
 
     if (!authUser) {
@@ -23,15 +27,11 @@ export default function ProfilePage() {
     setUser(authUser);
 
     // Get user profile
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", authUser.id)
       .maybeSingle();
-
-    if (profileError) {
-      console.log("Profile error:", profileError);
-    }
 
     setProfile(profileData);
 
@@ -47,7 +47,7 @@ export default function ProfilePage() {
   }
 
   async function deleteListing(listingId: string, listingTitle: string) {
-    if (!confirm(`Are you sure you want to delete "${listingTitle}"? This action cannot be undone.`)) {
+    if (!confirm(`Permanently delete "${listingTitle}"? This cannot be undone.`)) {
       return;
     }
 
@@ -57,216 +57,190 @@ export default function ProfilePage() {
       .eq("id", listingId);
 
     if (error) {
-      alert("Error deleting listing");
+      alert("Error removing asset.");
       return;
     }
 
-    // Remove from local state
     setListings(prev => prev.filter(listing => listing.id !== listingId));
   }
 
   useEffect(() => {
     loadProfileData();
+
+    // Refresh data when window regains focus
+    const handleFocus = () => {
+      console.log("Profile page regained focus, reloading data");
+      loadProfileData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // Also refresh when page becomes visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        console.log("Profile page became visible, reloading data");
+        loadProfileData();
+      }
+    });
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', () => {});
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
+          <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Loading Dossier...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-semibold text-gray-900">My Profile</h1>
+    <div className="min-h-screen bg-[#121212] text-white pb-24 font-sans selection:bg-red-600 selection:text-white relative">
+      
+      {/* Noise Texture */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
+           style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
+      />
+
+      {/* Navbar */}
+      <nav className="fixed top-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-l border-white/10 py-4 px-6">
+        <div className="flex items-center justify-end gap-3">
+          <button onClick={() => router.push("/profile/edit")} className="px-5 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center gap-2">
+             <Edit className="w-3 h-3" />
+             <span className="text-xs font-bold uppercase tracking-widest">Edit Identity</span>
+          </button>
         </div>
-      </header>
+      </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">Account Information</h2>
-            <button
-              onClick={() => router.push("/profile/edit")}
-              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Edit Profile
-            </button>
-          </div>
-
-          {/* Avatar and Username Section */}
-          <div className="flex items-center gap-6 mb-8 pb-8 border-b border-gray-200">
-            <div className="relative">
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-blue-100"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
-                  {profile?.username?.charAt(0).toUpperCase() || profile?.name?.charAt(0).toUpperCase() || "?"}
-                </div>
-              )}
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-32 space-y-16">
+         
+         {/* --- PROFILE CARD --- */}
+         <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden group">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none group-hover:opacity-10 transition-opacity duration-700">
+               <span className="text-[12rem] font-black text-white leading-none tracking-tighter">ID</span>
             </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">
-                {profile?.username || "No username set"}
-              </h3>
-              <p className="text-gray-600">{user?.email}</p>
-            </div>
-          </div>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-red-600 to-[#1a1a1a]" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <p className="text-lg text-gray-900">{profile?.username || "Not set"}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <p className="text-lg text-gray-900">{profile?.name || "Not set"}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone
-              </label>
-              <p className="text-lg text-gray-900">{profile?.phone || "Not set"}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                City
-              </label>
-              <p className="text-lg text-gray-900">{profile?.city || "Not set"}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* My Listings */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              My Listings ({listings.length})
-            </h2>
-            <button
-              onClick={() => router.push("/listing/create")}
-              className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Listing
-            </button>
-          </div>
-
-          {listings.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No listings yet</h3>
-              <p className="mt-2 text-sm text-gray-500">Start selling by creating your first listing.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {listings.map((listing) => (
-                <div
-                  key={listing.id}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group flex flex-col"
-                >
-                  {/* Image */}
-                  <div
-                    className="relative aspect-square bg-gray-100 cursor-pointer"
-                    onClick={() => router.push(`/listing/${listing.id}`)}
-                  >
-                    {listing.cover_image ? (
-                      <img
-                        src={listing.cover_image}
-                        alt={listing.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    {listing.status === "sold" && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                        <span className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold text-lg">
-                          SOLD
-                        </span>
-                      </div>
-                    )}
+            <div className="flex flex-col md:flex-row gap-10 items-start relative z-10">
+               {/* Avatar */}
+               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#121212] bg-[#121212] overflow-hidden shadow-2xl shrink-0 relative">
+                  {profile?.avatar_url ? (
+                     <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                  ) : (
+                     <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-white/20 bg-white/5">
+                        {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "?"}
+                     </div>
+                  )}
+               </div>
+               
+               {/* Info */}
+               <div className="flex-1 space-y-6 pt-2">
+                  <div>
+                     <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mb-2">
+                        {profile?.name || "Anonymous Agent"}
+                     </h1>
+                     <div className="flex items-center gap-3">
+                        <p className="text-red-500 font-mono text-sm">@{profile?.username || "username_unset"}</p>
+                        <span className="text-white/20">|</span>
+                        <p className="text-white/40 font-mono text-sm uppercase">Level 1 Seller</p>
+                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div
-                    className="p-4 flex-grow cursor-pointer"
-                    onClick={() => router.push(`/listing/${listing.id}`)}
-                  >
-                    <h3 className="font-semibold text-gray-900 text-lg mb-2 line-clamp-2">
-                      {listing.title}
-                    </h3>
-                    <p className="text-2xl font-bold text-blue-600 mb-2">
-                      ₹{listing.price.toLocaleString()}
-                    </p>
-                    {listing.location && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {listing.location}
-                      </div>
-                    )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-white/60 pt-4 border-t border-white/10">
+                     <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-red-600" />
+                        <span className="uppercase tracking-wide text-xs font-bold">{profile?.city || "Location Classified"}</span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-red-600" />
+                        <span className="uppercase tracking-wide text-xs font-bold">{user?.email}</span>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-red-600" />
+                        <span className="uppercase tracking-wide text-xs font-bold">Joined {new Date(user?.created_at).toLocaleDateString()}</span>
+                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/listing/edit/${listing.id}`);
-                      }}
-                      className="flex-1 px-3 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteListing(listing.id, listing.title);
-                      }}
-                      className="px-3 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition-colors text-sm flex items-center justify-center"
-                      title="Delete listing"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
+               </div>
             </div>
-          )}
-        </div>
-      </div>
+         </div>
+
+         {/* --- LISTINGS SECTION --- */}
+         <div className="space-y-8">
+            <div className="flex items-end justify-between border-b border-white/10 pb-4">
+               <div>
+                  <h2 className="text-2xl font-bold uppercase tracking-widest text-white">Inventory</h2>
+                  <p className="text-xs font-mono text-white/40 mt-1">ASSETS UNDER YOUR CONTROL</p>
+               </div>
+               <div className="flex items-center gap-4">
+                  <span className="text-4xl font-black text-white/10">{listings.length.toString().padStart(2, '0')}</span>
+                  <button onClick={() => router.push("/listing/create")} className="h-10 w-10 bg-white text-black hover:bg-red-600 hover:text-white rounded-full flex items-center justify-center transition-all shadow-lg">
+                     <Plus className="w-5 h-5" />
+                  </button>
+               </div>
+            </div>
+
+            {listings.length === 0 ? (
+               <div className="h-64 border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/30 gap-4 bg-[#1a1a1a]/50">
+                  <Package className="w-10 h-10 opacity-50" />
+                  <p className="text-xs font-bold uppercase tracking-widest">Inventory Empty</p>
+               </div>
+            ) : (
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {listings.map((item) => (
+                     <div key={item.id} className="group bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden hover:border-red-600/50 transition-all hover:shadow-2xl relative">
+                        
+                        {/* Image Area */}
+                        <div onClick={() => router.push(`/listing/${item.id}`)} className="aspect-[4/3] bg-black/50 relative cursor-pointer overflow-hidden">
+                           {item.cover_image ? (
+                               <img src={item.cover_image} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" />
+                           ) : (
+                               <div className="w-full h-full flex items-center justify-center text-white/20"><Package className="w-8 h-8"/></div>
+                           )}
+                           
+                           {item.status === 'sold' && (
+                               <div className="absolute inset-0 bg-black/80 flex items-center justify-center backdrop-blur-sm">
+                                   <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold uppercase tracking-widest rounded border border-red-400">Sold</span>
+                               </div>
+                           )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="p-4 flex flex-col gap-2">
+                           <div onClick={() => router.push(`/listing/${item.id}`)} className="cursor-pointer">
+                                <h3 className="text-white font-bold truncate text-lg group-hover:text-red-500 transition-colors">{item.title}</h3>
+                                <p className="text-white/50 font-mono text-sm">₹{item.price.toLocaleString()}</p>
+                           </div>
+
+                           {/* Actions Toolbar */}
+                           <div className="flex items-center gap-2 mt-2 pt-3 border-t border-white/5">
+                              <button 
+                                onClick={() => router.push(`/listing/${item.id}`)}
+                                className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                              >
+                                 <ExternalLink className="w-3 h-3" /> View
+                              </button>
+                              <button 
+                                onClick={() => deleteListing(item.id, item.title)}
+                                className="py-2 px-3 bg-red-900/20 hover:bg-red-600 text-red-500 hover:text-white rounded text-[10px] font-bold uppercase tracking-wider transition-colors"
+                              >
+                                 <Trash2 className="w-3 h-3" />
+                              </button>
+                           </div>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            )}
+         </div>
+
+      </main>
     </div>
   );
 }
