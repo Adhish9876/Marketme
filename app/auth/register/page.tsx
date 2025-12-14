@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Camera, Loader2, UserPlus } from "lucide-react";
+import { Suspense } from "react";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -83,14 +84,14 @@ export default function RegisterPage() {
 
       console.log("Creating profile for user:", data.user.id);
 
-      const { error: profileError, data: profileData } = await supabase.from("profiles").insert({
+      const { error: profileError, data: profileData } = await supabase.from("profiles").insert([{
         id: data.user.id,
         username: username.trim(),
         name: name.trim(),
         phone: phone.trim(),
         city: city.trim(),
         avatar_url: avatarUrl,
-      }).select();
+      }]).select();
 
       if (profileError) {
         console.error("Profile creation error:", profileError);
@@ -293,5 +294,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#121212]"><div className="text-white">Loading...</div></div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }

@@ -10,6 +10,7 @@ import {
   Plus, User, LogOut, ArrowRight, Heart, Menu, SlidersHorizontal
 } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 // Helper hook for debouncing (prevents API spam while typing)
 function useDebounce<T>(value: T, delay: number): T {
@@ -21,7 +22,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -532,5 +533,13 @@ export default function HomePage() {
       </AnimatePresence>
 
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><div>Loading...</div></div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }

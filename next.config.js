@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // For Firebase Hosting static export
-  output: 'export',
-  distDir: 'build',
-  // Disable image optimization for static export
+  // Vercel will handle server-side rendering dynamically
+  // No need for static export mode
   images: {
     unoptimized: true,
   },
