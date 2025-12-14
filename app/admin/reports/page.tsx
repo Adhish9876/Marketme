@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import AdminReportItem from "../../../../components/AdminReportItem";
+import AdminReportItem from "@/components/AdminReportItem";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
