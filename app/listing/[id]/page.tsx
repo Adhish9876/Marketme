@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
-import { 
-  ArrowLeft, MapPin, Flag, ChevronLeft, ChevronRight, 
+import {
+  ArrowLeft, MapPin, Flag, ChevronLeft, ChevronRight,
   MessageSquare, Shield, Share2, CheckCircle2,
-  Box, Layers, Calendar, ArrowUpRight
+  Box, Layers, Calendar, ArrowUpRight,Home
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SaveButton from "@/components/SaveButton";
-import GoogleMapComponent from "@/components/GoogleMapComponent";
+import Stack from "@/components/fancy/stack";
+import { openChatWithSeller } from "@/components/ChatWidget";
+import Link from "next/link";
 
 type Listing = {
   id: string;
@@ -57,11 +59,11 @@ export default function ListingDetailsPage() {
   const params = useParams();
   const id = params?.id as string;
 
+  
   const [listing, setListing] = useState<Listing | null>(null);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgIndex, setImgIndex] = useState(0);
-
   // --- Data Fetching ---
   useEffect(() => {
     async function fetchData() {
@@ -103,7 +105,8 @@ export default function ListingDetailsPage() {
     fetchData();
   }, [id]);
 
-  // --- Logic ---
+  // --- Unread message tracking for this seller ---
+  // --- Prepare images array ---
   const allImages = listing ? [
     ...(listing.cover_image ? [listing.cover_image] : []),
     ...(listing.banner_image ? [listing.banner_image] : []),
@@ -111,43 +114,72 @@ export default function ListingDetailsPage() {
     ...(listing.images || []),
   ].filter(Boolean) : [];
 
+  // --- Image navigation ---
   const scrollImage = (dir: 'next' | 'prev') => {
     if (dir === 'next') setImgIndex((c) => (c + 1) % allImages.length);
     else setImgIndex((c) => (c - 1 + allImages.length) % allImages.length);
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-         <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
-         <p className="font-mono text-xs uppercase tracking-widest text-white/30">Loading Asset Data...</p>
-      </div>
-    </div>
-  );
+  // --- Message button handler ---
+  const handleMessageClick = () => {
+    if (listing?.user_id) {
+       openChatWithSeller(listing.user_id); 
+    }
+  };
 
+  // --- Seller click handler ---
+  const handleSellerClick = () => {
+    if (seller?.id) {
+      router.push(`/seller/${seller.id}`);
+    }
+  };
+
+  // --- Render loading state ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Stack />
+          <p className="font-mono text-xs uppercase tracking-widest text-white/30">Loading Asset Data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Render null if no data ---
   if (!listing || !seller) return null;
 
+  // --- Main render ---
   return (
-    <div className="min-h-screen bg-[#121212] text-white font-sans selection:bg-red-600 selection:text-white pb-32 overflow-x-hidden">
-      
+    <div className="min-h-screen bg-[#121212] text-white font-sans selection:bg-red-600 selection:text-white pb-16 sm:pb-24 md:pb-32 overflow-x-hidden">
       {/* Cinematic Noise Overlay */}
       <div className="fixed inset-0 pointer-events-none z-2 opacity-5"
            style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' fill='white'/%3E%3C/svg%3E")`}} 
       />
 
       {/* --- FLOATING NAVBAR --- */}
-      <nav className="absolute top-0 left-0 right-0 z-[100] px-6 py-6 flex justify-between items-start pointer-events-none">
-        <button 
-          onClick={() => router.back()}
-          className="pointer-events-auto flex items-center gap-3 px-6 py-3 bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all group shadow-2xl"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Return</span>
-        </button>
+      <nav className="absolute top-0 left-0 right-0 z-[100] px-3 sm:px-6 py-3 sm:py-6 flex justify-between items-start pointer-events-none">
+       <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
+  <button 
+    onClick={() => router.back()}
+    className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all group shadow-2xl"
+  >
+    <ArrowLeft className="w-3 sm:w-4 h-3 sm:h-4 group-hover:-translate-x-1 transition-transform" />
+    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Return</span>
+  </button>
 
-        <div className="pointer-events-auto flex items-center gap-3">
-           <button className="w-12 h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl">
-              <Share2 className="w-4 h-4" />
+  <Link
+  href="/"
+  className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl"
+>
+  <Home className="w-3 sm:w-4 h-3 sm:h-4" />
+</Link>
+</div>
+
+
+        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
+           <button className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl">
+              <Share2 className="w-3 sm:w-4 h-3 sm:h-4" />
            </button>
            <div className="bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
               <SaveButton listingId={listing.id} />
@@ -156,9 +188,9 @@ export default function ListingDetailsPage() {
       </nav>
 
       {/* --- MAIN CONTENT --- */}
-      <main className="relative my-5 z-10 pt-20 px-4 sm:px-8 max-w-[1800px] mx-auto">
+      <main className="relative my-4 sm:my-5 z-10 pt-16 sm:pt-20 px-3 sm:px-4 md:px-8 max-w-[1800px] mx-auto">
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 md:gap-8 lg:gap-12">
           
           {/* --- LEFT COLUMN: VISUALS (Cinematic) --- */}
           <div className="lg:col-span-8 space-y-5">
@@ -168,7 +200,7 @@ export default function ListingDetailsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="relative aspect-[16/10] w-full bg-[#0a0a0a] rounded-[2.5rem] border border-white/10 overflow-hidden shadow-[0_20px_50px_-20px_rgba(0,0,0,0.7)] group"
+              className="relative aspect-[16/10] w-full bg-[#0a0a0a] rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] border border-white/10 overflow-hidden shadow-lg sm:shadow-2xl md:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.7)] group"
             >
                {allImages.length > 0 ? (
                  <>
@@ -182,24 +214,24 @@ export default function ListingDetailsPage() {
                    
                    {/* Navigation Arrows (Hover) */}
                    {allImages.length > 1 && (
-                     <div className="absolute inset-0 flex items-center justify-between p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button onClick={() => scrollImage('prev')} className="w-14 h-14 bg-black/40 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-600 hover:border-red-600 transition-all">
-                          <ChevronLeft className="w-6 h-6" />
+                     <div className="absolute inset-0 flex items-center justify-between p-4 sm:p-6 md:p-8 opacity-0 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button onClick={() => scrollImage('prev')} className="w-10 sm:w-12 md:w-14 h-10 sm:h-12 md:h-14 bg-black/40 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-600 hover:border-red-600 transition-all">
+                          <ChevronLeft className="w-5 sm:w-6 h-5 sm:h-6" />
                         </button>
-                        <button onClick={() => scrollImage('next')} className="w-14 h-14 bg-black/40 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-600 hover:border-red-600 transition-all">
-                          <ChevronRight className="w-6 h-6" />
+                        <button onClick={() => scrollImage('next')} className="w-10 sm:w-12 md:w-14 h-10 sm:h-12 md:h-14 bg-black/40 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-red-600 hover:border-red-600 transition-all">
+                          <ChevronRight className="w-5 sm:w-6 h-5 sm:w-6" />
                         </button>
                      </div>
                    )}
 
                    {/* Tech Overlay: Counter */}
-                   <div className="absolute bottom-8 right-8 px-5 py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-3">
-                      <div className="flex gap-1">
+                   <div className="absolute bottom-3 sm:bottom-4 md:bottom-8 right-3 sm:right-4 md:right-8 px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 sm:gap-3">
+                      <div className="flex gap-0.5 sm:gap-1">
                         {allImages.map((_, i) => (
-                          <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === imgIndex ? 'bg-red-600' : 'bg-white/20'}`} />
+                          <div key={i} className={`w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full ${i === imgIndex ? 'bg-red-600' : 'bg-white/20'}`} />
                         ))}
                       </div>
-                      <span className="text-[10px] font-bold font-mono tracking-widest border-l border-white/20 pl-3 text-white/80">
+                      <span className="text-[8px] sm:text-[10px] font-bold font-mono tracking-widest border-l border-white/20 pl-2 sm:pl-3 text-white/80">
                         IMG {String(imgIndex + 1).padStart(2, '0')}
                       </span>
                    </div>
@@ -213,7 +245,7 @@ export default function ListingDetailsPage() {
             </motion.div>
 
             {/* 2. Specs Grid (Data Visualization) */}
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-16">
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 -mt-8 sm:-mt-10 md:-mt-16">
 
                {[
                  { label: "Category", value: listing.category, icon: Layers },
@@ -221,11 +253,11 @@ export default function ListingDetailsPage() {
                  { label: "Listed", value: new Date(listing.created_at).toLocaleDateString(), icon: Calendar },
                  { label: "Location", value: listing.location, icon: MapPin },
                ].map((item, i) => (
-                 <div key={i} className="bg-[#181818] border border-white/5 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/20 transition-colors">
-                    <item.icon className="w-5 h-5 text-red-600" />
+                 <div key={i} className="bg-[#181818] border border-white/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 flex flex-col gap-2 sm:gap-3 hover:border-white/20 transition-colors">
+                    <item.icon className="w-4 sm:w-5 h-4 sm:h-5 text-red-600" />
                     <div>
-                       <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{item.label}</p>
-                       <p className="text-sm font-bold text-white mt-1 truncate">{item.value}</p>
+                       <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-white/30">{item.label}</p>
+                       <p className="text-xs sm:text-sm font-bold text-white mt-0.5 sm:mt-1 truncate">{item.value}</p>
                     </div>
                  </div>
                ))}
@@ -237,64 +269,67 @@ export default function ListingDetailsPage() {
 
           {/* --- RIGHT: HUD (Sticky Actions) --- */}
           <div className="lg:col-span-4 relative">
-             <div className="sticky top-8 space-y-8">
+             <div className="sticky top-4 sm:top-6 md:top-8 space-y-4 sm:space-y-6 md:space-y-8">
                 
                 {/* 1. The "Price Ticket" HUD (Fixed Colors) */}
-                <div className="bg-[#181818] border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl">
+                <div className="bg-[#181818] border border-white/10 rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] p-4 sm:p-6 md:p-8 relative overflow-hidden group shadow-lg sm:shadow-xl md:shadow-2xl">
                    {/* Glowing Top Line */}
                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-red-900 to-transparent opacity-80" />
                    
-                   <div className="flex justify-between items-start mb-8">
+                   <div className="flex justify-between items-start mb-4 sm:mb-6 md:mb-8">
                       <div>
-                         <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2">Valuation</p>
-                         <div className="flex items-baseline gap-1">
-                            <span className="text-xl font-light text-white/40">₹</span>
-                            <span className="text-6xl font-black text-white tracking-tighter">
+                         <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1.5 sm:mb-2">Valuation</p>
+                         <div className="flex items-baseline gap-0.5 sm:gap-1">
+                            <span className="text-base sm:text-lg md:text-xl font-light text-white/40">₹</span>
+                            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter">
                               {listing.price.toLocaleString()}
                             </span>
                          </div>
                       </div>
                       {listing.status === "sold" && (
-                         <span className="bg-red-600/20 text-red-500 border border-red-600/50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                         <span className="bg-red-600/20 text-red-500 border border-red-600/50 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-widest">
                             Sold
                          </span>
                       )}
                    </div>
 
-                   <div className="space-y-4">
+                   <div className="space-y-3 sm:space-y-4">
                       {listing.status === "sold" ? (
-                         <button disabled className="w-full py-5 bg-[#222] border border-white/5 text-white/30 font-bold text-xs uppercase tracking-[0.2em] rounded-2xl cursor-not-allowed">
+                         <button disabled className="w-full py-3 sm:py-4 md:py-5 bg-[#222] border border-white/5 text-white/30 font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] rounded-xl sm:rounded-2xl cursor-not-allowed">
                             Acquisition Closed
                          </button>
-                      ) : (
+                      ) : !loading && (
                          <button 
-                           onClick={() => router.push(`/chat/${listing.user_id}`)}
-                           className="w-full py-5 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-lg flex items-center justify-center gap-3 group"
+                           onClick={handleMessageClick}
+                           className="relative w-full py-3 sm:py-4 md:py-5 bg-white text-black font-black text-[10px] sm:text-xs uppercase tracking-[0.2em] rounded-xl sm:rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2 sm:gap-3 group"
                          >
-                            <MessageSquare className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            <MessageSquare className="w-3.5 sm:w-4 h-3.5 sm:h-4 group-hover:scale-110 transition-transform" />
                             message
                          </button>
                       )}
                       
-                      <div className="flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
-                         <Shield className="w-3 h-3" /> Secure Protocol
+                      <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-white/30">
+                         <Shield className="w-2.5 sm:w-3 h-2.5 sm:h-3" /> Encrypted
                       </div>
                    </div>
                 </div>
 
                 {/* 2. Seller Dossier */}
-                <div className="bg-[#121212] border border-white/10 rounded-[2.5rem] p-2 flex items-center gap-4 hover:bg-[#181818] transition-colors group cursor-pointer">
-                   <div className="h-16 w-16 bg-[#222] rounded-[2rem] flex items-center justify-center border border-white/5 overflow-hidden group-hover:border-white/20 transition-colors">
+                <div 
+                  onClick={handleSellerClick}
+                  className="bg-[#121212] border border-white/10 rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] p-2 flex items-center gap-3 sm:gap-4 hover:bg-[#181818] transition-colors group cursor-pointer"
+                >
+                   <div className="h-12 sm:h-14 md:h-16 w-12 sm:w-14 md:w-16 bg-[#222] rounded-2xl sm:rounded-[1.75rem] md:rounded-[2rem] flex items-center justify-center border border-white/5 overflow-hidden group-hover:border-white/20 transition-colors">
                       {seller.avatar_url ? (
                          <img src={seller.avatar_url} className="w-full h-full object-cover" />
                       ) : (
-                         <span className="text-xl font-serif text-white/40">{seller.name.charAt(0)}</span>
+                         <span className="text-base sm:text-lg md:text-xl font-serif text-white/40">{seller.name.charAt(0)}</span>
                       )}
                    </div>
                    
                    <div className="flex-1">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Source ID</p>
-                       <div className="flex items-center gap-2 cursor-pointer" onClick={()=>{router.push(`/seller/${seller.id}`)}}>
+                       <div className="flex items-center gap-2">
                          <h4 className="text-lg font-bold text-white">{seller.name}</h4>
                          {seller.verified && <CheckCircle2 className="w-4 h-4 text-blue-500 fill-blue-500/20" />}
                       </div>
@@ -332,3 +367,4 @@ export default function ListingDetailsPage() {
     </div>
   );
 }
+  

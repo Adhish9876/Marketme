@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Camera, Loader2, UserPlus } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -104,7 +105,8 @@ export default function RegisterPage() {
     }
 
     //alert("Registration successful! Please check your email to verify your account.");
-    router.push("/");
+    const redirectTo = searchParams.get("redirect") || "/";
+    router.push(redirectTo);
   }
 
   return (
@@ -274,7 +276,14 @@ export default function RegisterPage() {
                  Existing operative?{" "}
                  <span
                    className="text-red-500 font-bold uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
-                   onClick={() => router.push("/auth/login")}
+                   onClick={() => {
+                     const redirect = searchParams.get("redirect");
+                     if (redirect) {
+                       router.push(`/auth/login?redirect=${encodeURIComponent(redirect)}`);
+                     } else {
+                       router.push("/auth/login");
+                     }
+                   }}
                  >
                    Sign In
                  </span>

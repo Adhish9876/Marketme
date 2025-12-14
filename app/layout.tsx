@@ -1,14 +1,13 @@
+"use client";
+
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from "../components/Navbar";
+import { ChatWidget } from "@/components/ChatWidget";
 //import { ThemeProvider } from "@/components/theme-provider"
 
 
-export const metadata: Metadata = {
-  title: 'Project',
-  description: 'Next.js project',
-};
-
+// Note: Metadata cannot be used with "use client" - move metadata to a separate server component if needed
 export default function RootLayout({
   children,
 }: {
@@ -21,6 +20,7 @@ export default function RootLayout({
         <div className="min-h-screen bg-[#EBEAE5]">
           {children}
         </div>
+        <ChatWidget />
       
       </body>
     </html>

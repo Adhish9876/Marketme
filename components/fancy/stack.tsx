@@ -1,4 +1,8 @@
-export default function Stack() {
+"use client";
+
+import dynamic from "next/dynamic";
+
+function StackContent() {
   return (
     <>
       <style>{`
@@ -130,3 +134,5 @@ export default function Stack() {
     </>
   );
 }
+
+export default dynamic(() => Promise.resolve(StackContent), { ssr: false });

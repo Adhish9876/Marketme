@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.pop-animation {
+  animation: pop 0.25s ease-out;
+}
+
+
 /* ----------------------------------------------------------
    SOFT NEUTRAL LIGHT & DARK THEME (GENTLE, EYE-PLEASING)
 -----------------------------------------------------------*/
@@ -37,6 +48,14 @@
     --ring: 30 8% 20%;
 
     --radius: 0.55rem;
+    --brand: #E24B4B;
+    --brand-strong: #C62828;
+    --brand-medium: rgba(226, 75, 75, 0.35);
+    --neutral-primary-medium: #101216;
+    --neutral-tertiary-medium: #1F2228;
+    --border-default-medium: rgba(255, 255, 255, 0.1);
+    --text-body: #F2F2F3;
+    --text-heading: #11131A;
   }
 
   .dark {
@@ -82,6 +101,42 @@
   }
 }
 
+.bg-brand {
+  background-color: var(--brand);
+}
+
+.bg-brand-strong:hover {
+  background-color: var(--brand-strong);
+}
+
+.bg-neutral-primary-medium {
+  background-color: var(--neutral-primary-medium);
+}
+
+.bg-neutral-tertiary-medium:hover {
+  background-color: var(--neutral-tertiary-medium);
+}
+
+.border-default-medium {
+  border-color: var(--border-default-medium);
+}
+
+.text-body {
+  color: var(--text-body);
+}
+
+.text-heading {
+  color: var(--text-heading);
+}
+
+.rounded-base {
+  border-radius: 0.85rem;
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
 /* ----------------------------------------------------------
    Scrollbar (Minimal + Neutral)
 -----------------------------------------------------------*/
@@ -101,5 +156,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--foreground) / 0.5);
+}
+
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body.chat-hidden .chat-toggle {
+  display: none !important;
 }
     

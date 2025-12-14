@@ -9,6 +9,7 @@ import {
   ScanLine, FileText, DollarSign, MapPin, Tag, AlertCircle 
 } from "lucide-react"
 import { motion } from "framer-motion"
+import Stack from "@/components/fancy/stack"
 
 export default function CreateListingPage() {
   const router = useRouter()
@@ -93,7 +94,7 @@ export default function CreateListingPage() {
     return (
       <div className="min-h-screen bg-[#111418] flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-12 h-12 border-4 border-[#2A2F37] border-t-[#E24B4B] rounded-full animate-spin"/>
+          <Stack />
           <p className="text-[#8F9399] font-mono text-xs uppercase tracking-[0.2em] animate-pulse">Initializing Secure Link...</p>
         </div>
       </div>
@@ -343,14 +344,24 @@ export default function CreateListingPage() {
                   <label className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#8F9399] group-focus-within:text-[#F2F2F3] flex items-center gap-2">
                     <Tag className="w-3 h-3" /> Class
                   </label>
-                  <input 
-                    type="text"
-                    value={category}
-                    onChange={e => setCategory(e.target.value)}
-                    placeholder="TECH"
-                    className="w-full bg-[#1F2329] border border-[#2A2F37] rounded-lg px-5 py-4 text-sm text-[#F2F2F3] placeholder:text-[#5C6066]
-                      focus:border-[#4EA3FF] focus:ring-1 focus:ring-[#4EA3FF] outline-none transition"
-                  />
+                                    <div className="relative">
+                                      <select 
+                                        value={category}
+                                        onChange={e => setCategory(e.target.value)}
+                                        className="w-full bg-[#1F2329] border border-[#2A2F37] rounded-lg px-5 py-4 text-sm text-[#F2F2F3] focus:border-[#4EA3FF] focus:ring-1 focus:ring-[#4EA3FF] outline-none cursor-pointer appearance-none transition shadow-sm hover:border-[#4EA3FF]/60 focus:shadow-lg"
+                                      >
+                                        <option value="" disabled hidden>Choose category</option>
+                                        <option value="electronics">ELECTRONICS</option>
+                                        <option value="lifestyle">LIFESTYLE</option>
+                                        <option value="collectables">COLLECTABLES</option>
+                                        <option value="car">CAR</option>
+                                        <option value="bike">BIKE</option>
+                                      </select>
+                                      <div className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2">
+                                        <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-[#8F9399]" />
+                                      </div>
+                                    </div>
+
                 </div>
 
                 {/* Condition */}
@@ -359,22 +370,20 @@ export default function CreateListingPage() {
                     <AlertCircle className="w-3 h-3" /> Integrity
                   </label>
                   <div className="relative">
-                    <select 
-                      value={condition}
-                      onChange={e => setCondition(e.target.value)}
-                      className="w-full bg-[#1F2329] border border-[#2A2F37] rounded-lg px-5 py-4 text-sm text-[#F2F2F3]
-                        focus:border-[#4EA3FF] focus:ring-1 focus:ring-[#4EA3FF] outline-none cursor-pointer"
-                    >
-                      <option value="" className="text-[#5C6066]">SELECT</option>
-                      <option value="New">NEW</option>
-                      <option value="Like New">LIKE NEW</option>
-                      <option value="Good">GOOD</option>
-                      <option value="Fair">FAIR</option>
-                      <option value="Used">USED</option>
-                    </select>
-
-                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-[#8F9399]" />
+                    <div className="relative">
+                      <select 
+                        value={condition}
+                        onChange={e => setCondition(e.target.value)}
+                        className="w-full bg-[#1F2329] border border-[#2A2F37] rounded-lg px-5 py-4 text-sm text-[#F2F2F3] focus:border-[#4EA3FF] focus:ring-1 focus:ring-[#4EA3FF] outline-none cursor-pointer appearance-none transition shadow-sm hover:border-[#4EA3FF]/60 focus:shadow-lg"
+                      >
+                        <option value="" disabled hidden>Choose condition</option>
+                        <option value="brand_new">BRAND NEW</option>
+                        <option value="opened_not_used">OPENED (NOT USED)</option>
+                        <option value="used">USED</option>
+                      </select>
+                      <div className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2">
+                        <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-[#8F9399]" />
+                      </div>
                     </div>
                   </div>
                 </div>

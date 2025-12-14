@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Camera, Loader2, Save, User, MapPin, Phone, Hash } from "lucide-react";
+import Stack from "@/components/fancy/stack";
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -136,7 +137,7 @@ export default function EditProfilePage() {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
+          <Stack />
           <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Accessing Database...</p>
         </div>
       </div>

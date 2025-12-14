@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,9 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    // Get redirect URL from query params, or go to home
+    const redirectTo = searchParams.get("redirect") || "/";
+    router.push(redirectTo);
   }
 
   return (

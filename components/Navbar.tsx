@@ -124,7 +124,7 @@ export default function Navbar() {
                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                  className="absolute top-full right-0 mt-3 w-80 bg-[#EBEAE5] border border-[#D6D5D0] rounded-xl shadow-2xl p-6 z-50"
+                  className="absolute top-full right-0 mt-3 w-80 p-4 z-50 bg-neutral-primary-medium border border-default-medium rounded-base shadow-xs text-body"
                 >
                   <div className="flex justify-between items-center mb-6 border-b border-[#D6D5D0] pb-2">
                     <span className="text-xs font-bold uppercase tracking-widest text-[#757570]">Filter Attributes</span>
@@ -223,7 +223,7 @@ export default function Navbar() {
                   )}
                 </Link>
                 {/* User Dropdown */}
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[#EBEAE5] border border-[#D6D5D0] rounded shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-neutral-primary-medium border border-default-medium rounded-base shadow-xs py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-body">
                   <div className="px-4 py-2 border-b border-[#D6D5D0] mb-1">
                     <p className="text-sm font-semibold text-[#2D2D2A] truncate">{profile?.username}</p>
                     <p className="text-xs text-[#757570] truncate">{user?.email}</p>

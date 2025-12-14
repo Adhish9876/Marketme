@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { 
-  MapPin, Calendar, Mail, Package, 
+import {
+  MapPin, Calendar, Mail, Package,
   ExternalLink, MessageCircle
 } from "lucide-react";
+// import { openChatWithSeller } from "@/components/ChatWidget"; // Removed due to missing export
+import { LoginPromptBanner } from "@/components/LoginPromptBanner";
+import Stack from "@/components/fancy/stack";
 
 export default function SellerProfilePage() {
   const router = useRouter();
@@ -16,6 +19,7 @@ export default function SellerProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   async function loadSellerData() {
     if (!sellerId) {
@@ -52,11 +56,24 @@ export default function SellerProfilePage() {
     loadSellerData();
   }, [sellerId]);
 
+  const handleContactClick = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    if (!sellerId || sellerId === 'null' || sellerId === 'undefined') {
+      console.error("Invalid seller ID:", sellerId);
+      return;
+    }
+    // openChatWithSeller(sellerId); // TODO: Implement chat functionality once function is available
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"/>
+          <Stack />
           <p className="text-white/40 font-mono text-xs uppercase tracking-widest">Loading Profile...</p>
         </div>
       </div>
@@ -66,6 +83,13 @@ export default function SellerProfilePage() {
   return (
     <div className="min-h-screen bg-[#121212] text-white pb-24 font-sans selection:bg-red-600 selection:text-white relative">
       
+      {/* Login Prompt Banner */}
+      <LoginPromptBanner 
+        isVisible={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        message="Sign in to contact sellers and unlock full marketplace access"
+      />
+
       {/* Noise Texture */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
            style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
@@ -129,7 +153,7 @@ export default function SellerProfilePage() {
 
                {/* Contact Button */}
                <button 
-                 onClick={() => router.push(`/chat/${sellerId}`)}
+                 onClick={handleContactClick}
                  className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center gap-2 whitespace-nowrap"
                >
                   <MessageCircle className="w-4 h-4" />
