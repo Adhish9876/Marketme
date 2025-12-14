@@ -1,7 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove 'export' mode to use the default server rendering
-  // This allows dynamic pages and API routes to work properly
+  // Disable static generation for dynamic client pages
+  // Use On-Demand ISR instead
+  experimental: {
+    isrMemoryCacheSize: 0,
+  },
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 5,
+  },
 };
 
 module.exports = nextConfig;
