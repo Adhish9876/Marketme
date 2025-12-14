@@ -225,26 +225,12 @@ export default function HomePage() {
         >
           <Link
             href={user ? "/profile" : "/auth/login"}
-            className="h-12 px-6 bg-white/10 border border-white/20 text-white hover:bg-white hover:text-black rounded-br-xl flex items-center justify-center text-sm font-black uppercase tracking-[0.25em] transition-all shadow-lg"
+            className="h-10 px-5 bg-white/10 border border-white/20 text-white hover:bg-white hover:text-black rounded-br-xl flex items-center justify-center text-sm font-black uppercase tracking-[0.25em] transition-all shadow-lg"
           >
             My Space
           </Link>
         </motion.div>
       )}
-
-      {/* Mobile search pill always visible */}
-      <div className="md:hidden fixed top-[5.5rem] inset-x-4 left-1/2 -translate-x-1/2 z-30">
-        <div className="bg-[#1a1a1a]/90 border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-2xl backdrop-blur-2xl">
-          <Search className="w-4 h-4 text-white/50" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent text-sm text-white w-full placeholder-white/40 outline-none"
-          />
-        </div>
-      </div>
 
       {/* --- MOBILE HAMBURGER MENU (Top Left) --- */}
       {user && !loading && introComplete && (
@@ -297,7 +283,7 @@ export default function HomePage() {
              <button onClick={clearFilters} className="mt-4 text-xs uppercase tracking-widest text-red-500 hover:text-white transition-colors">Reset</button>
           </div>
         ) : !loading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3  lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 md:my-1">
             {listings.map((listing, i) => (
               <motion.div
                 key={listing.id}
@@ -308,7 +294,7 @@ export default function HomePage() {
                 onClick={() => router.push(`/listing/${listing.id}`)}
                 className="group cursor-pointer flex flex-col gap-2 sm:gap-4"
               >
-                <div className="relative aspect-[4/5] sm:aspect-[4/3] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-[#1a1a1a] border border-white/10 group-hover:border-red-600/50 transition-all duration-500 shadow-xl">
+                <div className="relative h-44 sm:h-auto sm:aspect-[4/3] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-[#1a1a1a] border border-white/10 group-hover:border-red-600/50 transition-all duration-500 shadow-xl">
                    {listing.cover_image ? (
                      <img src={listing.cover_image} className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-110 group-hover:opacity-100" />
                    ) : (
@@ -360,7 +346,9 @@ export default function HomePage() {
       {!loading && (
         <motion.div 
           initial={{ y: 100 }} animate={{ y: 0 }}
-          className="hidden md:flex fixed bottom-8 inset-x-0 mx-auto z-40 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-full py-3 px-6 items-center gap-4 justify-center shadow-2xl h-16 w-fit max-w-2xl"
+          className={`hidden md:flex fixed bottom-8 inset-x-0 mx-auto z-40 bg-[#1a1a1a]/90 backdrop-blur-xl border border-white/10 rounded-full py-3 px-6 items-center gap-4 justify-center shadow-2xl h-16 w-fit max-w-2xl transition-all duration-300 ease-out transform ${
+            isSearchBarVisible ? "translate-y-0 opacity-100 pointer-events-auto" : "translate-y-16 opacity-0 pointer-events-none"
+          }`}
         >
            <div className="flex items-center  border-r border-white/10 pr-4 w-64">
               <Search className="w-4 h-4 text-white/50" />
@@ -398,6 +386,22 @@ export default function HomePage() {
            </div>
         </motion.div>
       )}
+
+      {/* Mobile search bar at bottom */}
+      <div className={`md:hidden fixed bottom-6 inset-x-4 left-1/2 -translate-x-1/2 z-40 transition-all duration-300 ease-out ${
+        isSearchBarVisible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0 pointer-events-none"
+      }`}>
+        <div className="bg-[#1a1a1a]/90 border border-white/10 rounded-full px-4 py-2 flex items-center gap-3 shadow-2xl backdrop-blur-xl">
+          <Search className="w-4 h-4 text-white/50" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-transparent border-none outline-none text-sm text-white placeholder-white/40 w-full"
+          />
+        </div>
+      </div>
 
       {/* --- MOBILE HAMBURGER (Floating Action Button) --- */}
       <div className="md:hidden fixed bottom-6 right-6 z-50">
@@ -475,17 +479,6 @@ export default function HomePage() {
                </motion.div>
              )}
 
-             {/* Chat Button */}
-             <button 
-               className="w-full bg-red-600/10 border border-red-600/30 text-red-500 py-4 rounded-xl text-center font-bold text-sm uppercase hover:bg-red-600 hover:text-white transition-all"
-               onClick={() => {
-                 // This would open the chat widget if you have a ref to it
-                 setShowMobileMenu(false);
-               }}
-             >
-               Chat
-             </button>
-             
              <div className="mt-auto">
                {user && (
                  <button onClick={() => { handleLogout(); setShowMobileMenu(false); }} className="w-full bg-red-600 text-white py-4 rounded-xl text-center font-bold text-sm uppercase hover:bg-red-700 transition-all">
