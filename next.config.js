@@ -1,13 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable static generation for dynamic client pages
-  // Use On-Demand ISR instead
-  experimental: {
-    isrMemoryCacheSize: 0,
-  },
-  onDemandEntries: {
-    maxInactiveAge: 25 * 1000,
-    pagesBufferLength: 5,
+  // For Firebase Hosting static export
+  output: 'export',
+  distDir: 'build',
+  // Disable image optimization for static export
+  images: {
+    unoptimized: true,
   },
 };
 
