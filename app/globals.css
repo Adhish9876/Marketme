@@ -171,4 +171,23 @@
 body.chat-hidden .chat-toggle {
   display: none !important;
 }
+
+/* Fix mobile scroll and layout */
+html {
+  background-color: #121212;
+  overflow-y: scroll; /* Always show scrollbar space to prevent layout shift */
+}
+
+body {
+  background-color: #121212;
+}
+
+/* Prevent layout shift on scroll */
+html, body {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
     

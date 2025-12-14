@@ -14,14 +14,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="bg-[#EBEAE5] transition-colors">
-       
-        <div className="min-h-screen bg-[#EBEAE5]">
+    <html lang="en" className="scroll-smooth">
+      <body className="bg-[#121212] text-white antialiased">
+        <div className="relative min-h-screen bg-[#121212]">
           {children}
         </div>
         <ChatWidget />
-      
       </body>
     </html>
   )

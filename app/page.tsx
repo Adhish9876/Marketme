@@ -172,17 +172,17 @@ function HomePageContent() {
           Once intro is complete, it becomes ABSOLUTE (scrolls with page).
       */}
       <motion.div 
-        className={`z-50 pointer-events-none mix-blend-difference flex flex-col w-full ${introComplete ? "absolute top-0 left-0 my-0 p-4 sm:p-8" : "fixed inset-0 justify-center items-center"}`}
+        className={`z-50 pointer-events-none flex flex-col w-full ${introComplete ? "absolute top-0 left-0 my-0 p-4 sm:p-8" : "fixed inset-0 justify-center items-center"}`}
         initial={isFirstVisit ? "intro" : "header"}
         animate={introComplete ? "header" : "intro"}
         variants={{
           intro: { }, // Handled by classNames
           header: { } // Handled by classNames
         }}
-        layout // This helps smooth transition between fixed/absolute
+        transition={{ duration: 0.8, ease: "easeInOut" }}
       >
           <div className={`flex flex-col ${introComplete ? "items-end w-full" : "items-center"}`}>
-            <motion.h1 layout className={`font-black uppercase leading-[0.8] tracking-tighter transition-all duration-1000 ${introComplete ? "text-5xl md:text-7xl" : "text-7xl md:text-[10rem]"}`}>
+            <motion.h1 className={`font-black uppercase leading-[0.8] tracking-tighter transition-all duration-1000 ${introComplete ? "text-5xl md:text-7xl" : "text-7xl md:text-[10rem]"}`}>
                Market
             </motion.h1>
             
@@ -199,7 +199,7 @@ function HomePageContent() {
                   </Link>
                </motion.div>
 
-               <motion.h1 layout className={`font-black uppercase leading-[0.8] tracking-tighter text-red-600 transition-all duration-1000 ${introComplete ? "text-5xl md:text-7xl" : "text-7xl md:text-[10rem]"}`}>
+               <motion.h1 className={`font-black uppercase leading-[0.8] tracking-tighter text-red-600 transition-all duration-1000 ${introComplete ? "text-5xl md:text-7xl" : "text-7xl md:text-[10rem]"}`}>
                   Me.
                </motion.h1>
             </div>
