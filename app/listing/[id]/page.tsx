@@ -7,13 +7,16 @@ import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft, MapPin, Flag, ChevronLeft, ChevronRight,
   MessageSquare, Shield, Share2, CheckCircle2,
-  Box, Layers, Calendar, ArrowUpRight, Home, ZoomIn
+  Box, Layers, Calendar, ArrowUpRight, Home, ZoomIn, DollarSign
 } from "lucide-react";
 import { motion } from "framer-motion";
 import SaveButton from "@/components/SaveButton";
 import Stack from "@/components/fancy/stack";
 import { openChatWithSeller } from "@/components/ChatWidget";
 import ImageGalleryModal from "@/components/ImageGalleryModal";
+import OfferModal from "@/components/OfferModal";
+import OffersList from "@/components/OffersList";
+import { useOffers } from "@/hooks/useOffers";
 import Link from "next/link";
 
 type Listing = {
@@ -66,10 +69,17 @@ export default function ListingDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [imgIndex, setImgIndex] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const { offers, createOffer: submitOffer, acceptOffer, rejectOffer } = useOffers(id || "");
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
       try {
+        // Get current user
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setUser(currentUser);
+
         const { data: listingData, error: listingError } = await supabase
           .from("listings")
           .select("*")
@@ -96,6 +106,15 @@ export default function ListingDetailsPage() {
           });
         } else {
            setSeller({ id: listingData.user_id, name: "Unknown", username: "user", city: "Unknown", verified: false });
+        }
+
+        // Track recently viewed
+        if (currentUser) {
+          await supabase.from("user_recently_viewed").upsert({
+            user_id: currentUser.id,
+            listing_id: id,
+            viewed_at: new Date().toISOString(),
+          });
         }
       } catch (err) {
         console.error(err);
@@ -153,6 +172,19 @@ export default function ListingDetailsPage() {
   // --- Main render ---
   return (
     <div className="min-h-screen bg-[#121212] text-white font-sans selection:bg-red-600 selection:text-white pb-16 sm:pb-24 md:pb-32 overflow-x-hidden">
+      {/* Offer Modal */}
+      <OfferModal
+        isOpen={offerModalOpen}
+        onClose={() => setOfferModalOpen(false)}
+        listingPrice={listing?.price || 0}
+        listingTitle={listing?.title || ""}
+        onSubmit={async (offeredPrice, message) => {
+          if (!user || !seller) return;
+          await submitOffer(user.id, seller.id, offeredPrice, message);
+          setOfferModalOpen(false);
+        }}
+      />
+
       {/* Cinematic Noise Overlay */}
       <div className="fixed inset-0 pointer-events-none z-2 opacity-5"
            style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' fill='white'/%3E%3C/svg%3E")`}} 
@@ -167,28 +199,28 @@ export default function ListingDetailsPage() {
       />
 
       {/* --- FLOATING NAVBAR --- */}
-      <nav className="absolute top-0 left-0 right-0 z-[100] px-3 sm:px-6 py-3 sm:py-6 flex justify-between items-start pointer-events-none">
-       <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
+      <nav className="absolute top-0 left-0 right-0 z-[100] px-2 sm:px-3 md:px-6 py-2 sm:py-3 md:py-6 flex justify-between items-start pointer-events-none">
+       <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 md:gap-3">
   <button 
     onClick={() => router.back()}
-    className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all group shadow-2xl"
+    className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 md:gap-3 px-2 sm:px-3 md:px-6 py-1.5 sm:py-2 md:py-3 bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all group shadow-2xl active:scale-95"
   >
-    <ArrowLeft className="w-3 sm:w-4 h-3 sm:h-4 group-hover:-translate-x-1 transition-transform" />
-    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Return</span>
+    <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
+    <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em]">Return</span>
   </button>
 
   <Link
   href="/"
-  className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl"
+  className="w-8 h-8 sm:w-10 md:w-12 sm:h-10 md:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl active:scale-95"
 >
-  <Home className="w-3 sm:w-4 h-3 sm:h-4" />
+  <Home className="w-3 h-3 sm:w-4 sm:h-4" />
 </Link>
 </div>
 
 
-        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
-           <button className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl">
-              <Share2 className="w-3 sm:w-4 h-3 sm:h-4" />
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 md:gap-3">
+           <button className="w-8 h-8 sm:w-10 md:w-12 sm:h-10 md:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl active:scale-95">
+              <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
            </button>
            <div className="bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
               <SaveButton listingId={listing.id} />
@@ -197,12 +229,12 @@ export default function ListingDetailsPage() {
       </nav>
 
       {/* --- MAIN CONTENT --- */}
-      <main className="relative my-4 sm:my-5 z-10 pt-16 sm:pt-20 px-3 sm:px-4 md:px-8 max-w-[1800px] mx-auto">
+      <main className="relative my-2 sm:my-4 md:my-5 z-10 pt-12 sm:pt-16 md:pt-20 px-2 sm:px-3 md:px-4 lg:px-8 max-w-[1800px] mx-auto">
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 md:gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-12">
           
           {/* --- LEFT COLUMN: VISUALS (Cinematic) --- */}
-          <div className="lg:col-span-8 space-y-5">
+          <div className="lg:col-span-8 space-y-3 sm:space-y-4 md:space-y-5">
             
             {/* 1. Main Projector Screen */}
             <motion.div 
@@ -322,13 +354,22 @@ export default function ListingDetailsPage() {
                ))}
             </div>
 
+                               <div className="p-4 sm:p-5 md:p-6 lg:p-8 border border-white/10 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-[2rem] bg-[#1a1a1a]/50">
+               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-3xl font-black mb-3 sm:mb-4 md:mb-6 tracking-tight text-white/90">Description</h2>
+               <div className="prose prose-invert prose-sm md:prose-base lg:prose-lg max-w-none">
+                 <p className="text-white/60 font-semibold leading-relaxed whitespace-pre-line text-xs sm:text-sm md:text-base">
+                   {listing.description}
+                 </p>
+               </div>
+            </div>
+
             {/* 3. Description (Typography with Border) */}
             
           </div>
 
           {/* --- RIGHT: HUD (Sticky Actions) --- */}
           <div className="lg:col-span-4 relative">
-             <div className="sticky top-4 sm:top-6 md:top-8 lg:top-8 space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
+             <div className="lg:sticky lg:top-4 md:lg:top-6 lg:lg:top-8 space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
                 
                 {/* 1. The "Price Ticket" HUD (Fixed Colors) */}
                 <div className="bg-[#181818] border border-white/10 rounded-xl sm:rounded-2xl md:rounded-[2rem] lg:rounded-[2.5rem] p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden group shadow-lg sm:shadow-lg md:shadow-xl lg:shadow-2xl">
@@ -357,13 +398,34 @@ export default function ListingDetailsPage() {
                          <button disabled className="w-full py-2.5 sm:py-3 md:py-4 lg:py-5 bg-[#222] border border-white/5 text-white/30 font-bold text-[9px] sm:text-[10px] md:text-xs lg:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] rounded-lg sm:rounded-xl md:rounded-2xl cursor-not-allowed">
                             Acquisition Closed
                          </button>
-                      ) : !loading && (
+                      ) : !loading && user && user.id !== listing.user_id ? (
+                         <>
+                           <button 
+                             onClick={() => setOfferModalOpen(true)}
+                             className="relative w-full py-2.5 sm:py-3 md:py-4 lg:py-5 bg-red-600 text-white font-black text-[9px] sm:text-[10px] md:text-xs lg:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] rounded-lg sm:rounded-xl md:rounded-2xl hover:bg-red-700 transition-all shadow-lg flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3 group"
+                           >
+                             <DollarSign className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4 group-hover:scale-110 transition-transform" />
+                             Make Offer
+                           </button>
+                           <button 
+                             onClick={handleMessageClick}
+                             className="relative w-full py-2.5 sm:py-3 md:py-4 lg:py-5 bg-white text-black font-black text-[9px] sm:text-[10px] md:text-xs lg:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] rounded-lg sm:rounded-xl md:rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-lg flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3 group"
+                           >
+                             <MessageSquare className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4 group-hover:scale-110 transition-transform" />
+                             message
+                           </button>
+                         </>
+                      ) : !loading && user && user.id === listing.user_id ? (
+                         <div className="text-center py-3 text-white/50 text-xs">
+                           <p>This is your listing</p>
+                         </div>
+                      ) : (
                          <button 
                            onClick={handleMessageClick}
                            className="relative w-full py-2.5 sm:py-3 md:py-4 lg:py-5 bg-white text-black font-black text-[9px] sm:text-[10px] md:text-xs lg:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] rounded-lg sm:rounded-xl md:rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-lg flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3 group"
                          >
-                            <MessageSquare className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4 group-hover:scale-110 transition-transform" />
-                            message
+                           <MessageSquare className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4 group-hover:scale-110 transition-transform" />
+                           message
                          </button>
                       )}
                       
@@ -399,19 +461,28 @@ export default function ListingDetailsPage() {
                    </div>
                 </div>
 
-                {/* 3. Description Section */}
-                
-                   <div className="p-4 sm:p-5 md:p-6 lg:p-8 border border-white/10 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-[2rem] bg-[#1a1a1a]/50">
-               <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-3xl font-black mb-3 sm:mb-4 md:mb-6 tracking-tight text-white/90">Description</h2>
-               <div className="prose prose-invert prose-sm md:prose-base lg:prose-lg max-w-none">
-                 <p className="text-white/60 font-semibold leading-relaxed whitespace-pre-line text-xs sm:text-sm md:text-base">
-                   {listing.description}
-                 </p>
-               </div>
-            </div>
+                {/* 3. Offers Section (for sellers) */}
+                {user && user.id === listing.user_id && (
+                  <div className="p-4 sm:p-5 md:p-6 lg:p-8 border border-white/10 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-[2rem] bg-[#1a1a1a]/50">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-3xl font-black mb-3 sm:mb-4 md:mb-6 tracking-tight text-white/90 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+                      Active Offers
+                    </h2>
+                    <OffersList
+                      offers={offers}
+                      userIsOwner={true}
+                      onAccept={acceptOffer}
+                      onReject={rejectOffer}
+                    />
+                  </div>
+                )}
+
+                {/* 4. Description Section */}
                 
 
-                {/* 4. Report Link */}
+                
+
+                {/* 5. Report Link */}
                 <div className="text-center">
                    <button className="text-[8px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/20 hover:text-red-600 flex items-center justify-center gap-1.5 sm:gap-2 transition-colors py-2 mx-auto">
                       <Flag className="w-2.5 sm:w-3 h-2.5 sm:h-3" /> Report Anomaly

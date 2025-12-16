@@ -109,22 +109,23 @@ export default function CreateListingPage() {
         style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}}
       />
 
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#181B20]/80 backdrop-blur-xl border-b border-[#2A2F37] py-4">
-        <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
+      {/* Navbar - Mobile optimized */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#181B20]/80 backdrop-blur-xl border-b border-[#2A2F37] py-2 sm:py-4">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 flex items-center justify-between">
           
           <button 
             onClick={() => router.back()} 
-            className="flex items-center gap-3 text-[#8F9399] hover:text-[#F2F2F3] text-xs font-semibold uppercase tracking-widest transition-colors group"
+            className="flex items-center gap-2 sm:gap-3 text-[#8F9399] hover:text-[#F2F2F3] text-[10px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest transition-colors group active:scale-95"
           >
-            <div className="p-2 border border-[#3A404A] rounded-full group-hover:border-[#C7C9CC] transition-colors">
-              <ArrowLeft className="w-4 h-4" />
+            <div className="p-1.5 sm:p-2 border border-[#3A404A] rounded-full group-hover:border-[#C7C9CC] transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            Back to Dashboard
+            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="sm:hidden">Back</span>
           </button>
 
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-[#E24B4B] rounded-full animate-pulse shadow-[0_0_10px_#E24B4B]" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#E24B4B] rounded-full animate-pulse shadow-[0_0_10px_#E24B4B]" />
            
           </div>
 
@@ -132,17 +133,17 @@ export default function CreateListingPage() {
       </nav>
 
       {/* Main */}
-      <main className="relative z-10 max-w-[1400px] mx-auto px-6 pt-28">
+      <main className="relative z-10 max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 pt-16 sm:pt-20 md:pt-28">
 
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#2A2F37] pb-8"
+          className="mb-6 sm:mb-10 md:mb-16 flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4 md:gap-6 border-b border-[#2A2F37] pb-4 sm:pb-6 md:pb-8"
         >
           <div>
-            <h1 className="text-5xl font-black tracking-tight uppercase text-[#F2F2F3]">New Listing</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight uppercase text-[#F2F2F3]">New Listing</h1>
           </div>
           <div className="hidden md:block text-right">
             <p className="text-[10px] font-mono text-[#5C6066] uppercase tracking-widest">Session ID</p>
@@ -150,19 +151,19 @@ export default function CreateListingPage() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10 items-start">
 
           {/* LEFT: IMAGES */}
           <motion.div 
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="lg:col-span-7 space-y-8"
+            className="lg:col-span-7 space-y-4 sm:space-y-6 md:space-y-8"
           >
 
             {/* COVER IMAGE */}
-            <div className="bg-[#181B20] border border-[#2A2F37] rounded-2xl p-1 shadow-xl">
-              <div className="bg-[#1F2329] rounded-xl p-6 border border-[#3A404A]">
+            <div className="bg-[#181B20] border border-[#2A2F37] rounded-xl sm:rounded-2xl p-1 shadow-xl">
+              <div className="bg-[#1F2329] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-[#3A404A]">
 
                 <div className="flex items-center justify-between mb-6">
                   <label className="text-xs text-[#C7C9CC] uppercase tracking-[0.2em] font-semibold flex items-center gap-3">
@@ -211,8 +212,8 @@ export default function CreateListingPage() {
             </div>
 
             {/* GALLERY */}
-            <div className="bg-[#181B20] border border-[#2A2F37] rounded-2xl p-1 shadow-xl">
-              <div className="bg-[#1F2329] rounded-xl p-6 border border-[#3A404A]">
+            <div className="bg-[#181B20] border border-[#2A2F37] rounded-xl sm:rounded-2xl p-1 shadow-xl">
+              <div className="bg-[#1F2329] rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-[#3A404A]">
 
                 <div className="flex justify-between items-center mb-6">
                   <label className="text-xs font-semibold text-[#C7C9CC] uppercase tracking-[0.2em] flex items-center gap-3">
@@ -230,7 +231,7 @@ export default function CreateListingPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
 
                   {extraImages.map((file, i) => (
                     <div key={i} className="aspect-square bg-[#111418] border border-[#2A2F37] rounded-lg relative overflow-hidden group hover:border-[#3A404A]">
@@ -267,9 +268,9 @@ export default function CreateListingPage() {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="lg:col-span-5 sticky top-28"
+            className="lg:col-span-5 lg:sticky lg:top-28"
           >
-            <div className="bg-[#181B20] border border-[#2A2F37] rounded-2xl p-8 shadow-xl relative">
+            <div className="bg-[#181B20] border border-[#2A2F37] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl relative">
 
               <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-[#3A404A] to-transparent"></div>
 

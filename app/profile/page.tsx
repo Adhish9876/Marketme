@@ -148,76 +148,76 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white pb-24 font-sans selection:bg-red-600 selection:text-white relative">
+    <div className="min-h-screen bg-[#121212] text-white pb-20 sm:pb-24 font-sans selection:bg-red-600 selection:text-white relative">
       
       {/* Noise Texture */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.035]" 
            style={{backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`}} 
       />
 
-      {/* Navbar */}
-      <nav className="fixed top-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-l border-white/10 py-4 px-6">
-        <div className="flex items-center justify-end gap-3">
-          <button onClick={() => router.push("/profile/edit")} className="px-5 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center gap-2">
+      {/* Navbar - Mobile optimized */}
+      <nav className="fixed top-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-l border-white/10 py-2 sm:py-4 px-3 sm:px-6">
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
+          <button onClick={() => router.push("/profile/edit")} className="px-3 sm:px-5 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg sm:rounded-xl hover:bg-red-700 transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] flex items-center gap-1.5 sm:gap-2 active:scale-95">
              <Edit className="w-3 h-3" />
-             <span className="text-xs font-bold uppercase tracking-widest">Edit Identity</span>
+             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest">Edit</span>
           </button>
           <Link
-  href="/"
-  className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl"
->
-  <Home className="w-3 sm:w-4 h-3 sm:h-4" />
-</Link>
-</div>
+            href="/"
+            className="w-8 h-8 sm:w-10 md:w-12 sm:h-10 md:h-12 flex items-center justify-center bg-[#121212]/90 backdrop-blur-xl border border-white/10 rounded-full hover:bg-white hover:text-black transition-all shadow-2xl active:scale-95"
+          >
+            <Home className="w-3 h-3 sm:w-4 sm:h-4" />
+          </Link>
+        </div>
       </nav>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-32 space-y-16">
+      <main className="relative z-10 max-w-6xl mx-auto px-3 sm:px-4 md:px-6 pt-16 sm:pt-24 md:pt-32 space-y-8 sm:space-y-12 md:space-y-16">
          
          {/* --- PROFILE CARD --- */}
-         <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden group">
+         <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 lg:p-12 relative overflow-hidden group">
             {/* Background Decor */}
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none group-hover:opacity-10 transition-opacity duration-700">
-               <span className="text-[12rem] font-black text-white leading-none tracking-tighter">ID</span>
+               <span className="text-[8rem] sm:text-[10rem] md:text-[12rem] font-black text-white leading-none tracking-tighter">ID</span>
             </div>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1a1a1a] via-red-600 to-[#1a1a1a]" />
 
-            <div className="flex flex-col md:flex-row gap-10 items-start relative z-10">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-10 items-center sm:items-start relative z-10">
                {/* Avatar */}
-               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[#121212] bg-[#121212] overflow-hidden shadow-2xl shrink-0 relative">
+               <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full border-4 border-[#121212] bg-[#121212] overflow-hidden shadow-2xl shrink-0 relative">
                   {profile?.avatar_url ? (
                      <img src={profile.avatar_url} className="w-full h-full object-cover" />
                   ) : (
-                     <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-white/20 bg-white/5">
+                     <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl md:text-5xl font-bold text-white/20 bg-white/5">
                         {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "?"}
                      </div>
                   )}
                </div>
                
                {/* Info */}
-               <div className="flex-1 space-y-6 pt-2">
+               <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 pt-0 sm:pt-2 text-center sm:text-left w-full">
                   <div>
-                     <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mb-2">
+                     <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter text-white mb-1 sm:mb-2">
                         {profile?.name || "Anonymous Agent"}
                      </h1>
-                     <div className="flex items-center gap-3">
-                        <p className="text-red-500 font-mono text-sm">@{profile?.username || "username_unset"}</p>
-                        <span className="text-white/20">|</span>
-                        <p className="text-white/40 font-mono text-sm uppercase">Level 1 Seller</p>
+                     <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 flex-wrap">
+                        <p className="text-red-500 font-mono text-xs sm:text-sm">@{profile?.username || "username_unset"}</p>
+                        <span className="text-white/20 hidden sm:inline">|</span>
+                        <p className="text-white/40 font-mono text-xs sm:text-sm uppercase">Level 1 Seller</p>
                      </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-white/60 pt-4 border-t border-white/10">
-                     <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-red-600" />
-                        <span className="uppercase tracking-wide text-xs font-bold">{profile?.city || "Location Classified"}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm text-white/60 pt-3 sm:pt-4 border-t border-white/10">
+                     <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                        <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 flex-shrink-0" />
+                        <span className="uppercase tracking-wide text-[10px] sm:text-xs font-bold truncate">{profile?.city || "Location Classified"}</span>
                      </div>
-                     <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-red-600" />
-                        <span className="uppercase tracking-wide text-xs font-bold">{user?.email}</span>
+                     <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                        <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 flex-shrink-0" />
+                        <span className="uppercase tracking-wide text-[10px] sm:text-xs font-bold truncate">{user?.email}</span>
                      </div>
-                     <div className="flex items-center gap-3">
-                        <Calendar className="w-4 h-4 text-red-600" />
-                        <span className="uppercase tracking-wide text-xs font-bold">Joined {new Date(user?.created_at).toLocaleDateString()}</span>
+                     <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 sm:col-span-2 md:col-span-1">
+                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 flex-shrink-0" />
+                        <span className="uppercase tracking-wide text-[10px] sm:text-xs font-bold">Joined {new Date(user?.created_at).toLocaleDateString()}</span>
                      </div>
                   </div>
                </div>
@@ -225,36 +225,36 @@ export default function ProfilePage() {
          </div>
 
          {/* --- TABS SECTION --- */}
-         <div className="space-y-8">
+         <div className="space-y-4 sm:space-y-6 md:space-y-8">
             {/* Tab Navigation */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-               <div className="flex gap-8">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 sm:pb-4">
+               <div className="flex gap-4 sm:gap-6 md:gap-8">
                   <button
                     onClick={() => setActiveTab('inventory')}
-                    className={`pb-2 text-lg font-bold uppercase tracking-widest transition-all ${
+                    className={`pb-2 text-sm sm:text-base md:text-lg font-bold uppercase tracking-wider sm:tracking-widest transition-all ${
                       activeTab === 'inventory'
                         ? 'text-white border-b-2 border-red-600'
-                        : 'text-white/40 hover:text-white/60'
+                        : 'text-white/40 active:text-white/60'
                     }`}
                   >
                     Inventory
                   </button>
                   <button
                     onClick={() => setActiveTab('liked')}
-                    className={`pb-2 text-lg font-bold uppercase tracking-widest transition-all ${
+                    className={`pb-2 text-sm sm:text-base md:text-lg font-bold uppercase tracking-wider sm:tracking-widest transition-all ${
                       activeTab === 'liked'
                         ? 'text-white border-b-2 border-red-600'
-                        : 'text-white/40 hover:text-white/60'
+                        : 'text-white/40 active:text-white/60'
                     }`}
                   >
                     Liked
                   </button>
                </div>
                {activeTab === 'inventory' && (
-                  <div className="flex items-center gap-4">
-                     <span className="text-4xl font-black text-white/10">{listings.length.toString().padStart(2, '0')}</span>
-                     <button onClick={() => router.push("/listing/create")} className="h-10 w-10 bg-white text-black hover:bg-red-600 hover:text-white rounded-full flex items-center justify-center transition-all shadow-lg">
-                        <Plus className="w-5 h-5" />
+                  <div className="flex items-center gap-2 sm:gap-4">
+                     <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white/10">{listings.length.toString().padStart(2, '0')}</span>
+                     <button onClick={() => router.push("/listing/create")} className="h-8 w-8 sm:h-10 sm:w-10 bg-white text-black hover:bg-red-600 hover:text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95">
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                      </button>
                   </div>
                )}
@@ -264,12 +264,12 @@ export default function ProfilePage() {
             {activeTab === 'inventory' && (
                <>
                {listings.length === 0 ? (
-                  <div className="h-64 border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/30 gap-4 bg-[#1a1a1a]/50">
-                     <Package className="w-10 h-10 opacity-50" />
-                     <p className="text-xs font-bold uppercase tracking-widest">Inventory Empty</p>
+                  <div className="h-48 sm:h-64 border border-dashed border-white/10 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-white/30 gap-3 sm:gap-4 bg-[#1a1a1a]/50">
+                     <Package className="w-8 h-8 sm:w-10 sm:h-10 opacity-50" />
+                     <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">Inventory Empty</p>
                   </div>
                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                   {listings.map((item) => (
                      <div key={item.id} className="group bg-[#1a1a1a] border border-white/10 rounded-xl sm:rounded-2xl overflow-hidden hover:border-red-600/50 transition-all hover:shadow-2xl relative">
                         
@@ -353,12 +353,12 @@ export default function ProfilePage() {
             {activeTab === 'liked' && (
                <>
                {savedListings.length === 0 ? (
-                  <div className="h-64 border border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-white/30 gap-4 bg-[#1a1a1a]/50">
-                     <Package className="w-10 h-10 opacity-50" />
-                     <p className="text-xs font-bold uppercase tracking-widest">No Saved Items</p>
+                  <div className="h-48 sm:h-64 border border-dashed border-white/10 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-white/30 gap-3 sm:gap-4 bg-[#1a1a1a]/50">
+                     <Package className="w-8 h-8 sm:w-10 sm:h-10 opacity-50" />
+                     <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest">No Saved Items</p>
                   </div>
                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                      {savedListings.map((item: any) => (
                         <div key={item.id} className="group bg-[#1a1a1a] border border-white/10 rounded-xl sm:rounded-2xl overflow-hidden hover:border-red-600/50 transition-all hover:shadow-2xl relative">
                            

@@ -190,4 +190,51 @@ html, body {
   padding: 0;
   overflow-x: hidden;
 }
+
+/* Smooth scrolling for all elements */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but keep scrolling functional */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom smooth scroll behavior for horizontal containers */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Optimize momentum scrolling on mobile */
+.horizontal-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.horizontal-scroll > div {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Enable smooth scrolling on touchpad and trackpad */
+@supports (scroll-behavior: smooth) {
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Disable text selection during drag */
+.select-none {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
     
