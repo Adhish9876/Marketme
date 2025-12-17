@@ -9,12 +9,13 @@ import { Slider as MUISlider, Box } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, ArrowUpRight, X, Sparkles, CornerRightDown, 
-  Plus, User, LogOut, ArrowRight, Heart, Menu, SlidersHorizontal
+  Plus, User, LogOut, ArrowRight, Heart, Menu, SlidersHorizontal, MessageCircle
 } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import SimpleSlider from "@/components/SimpleSlider";
 import HorizontalScroll from "@/components/HorizontalScroll";
+import { openChatWithSeller } from "@/components/ChatWidget";
 
 // Helper hook for debouncing (prevents API spam while typing)
 function useDebounce<T>(value: T, delay: number): T {
@@ -96,7 +97,7 @@ function HomePageContent() {
     if (!loading) {
       const timer = setTimeout(() => {
         setIntroComplete(true);
-      }, 500);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [loading, isFirstVisit]);
@@ -252,7 +253,7 @@ function HomePageContent() {
           intro: { }, // Handled by classNames
           header: { } // Handled by classNames
         }}
-        transition={{ duration: 0.8, ease: "easeInOut" }}
+        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >
           <div className={`flex flex-col ${introComplete ? "items-end w-full" : "items-center"}`}>
             <motion.h1 className={`font-black uppercase leading-[0.8] tracking-tighter transition-all duration-1000 ${introComplete ? "text-4xl sm:text-5xl md:text-7xl" : "text-5xl sm:text-7xl md:text-[10rem]"}`}>
@@ -264,7 +265,7 @@ function HomePageContent() {
                <motion.div 
                   initial={{ opacity: 0, scale: 0 }} 
                   animate={{ opacity: introComplete ? 1 : 0, scale: introComplete ? 1 : 0 }} 
-                  transition={{ delay: isFirstVisit ? 1.5 : 0 }}
+                  transition={{ delay: isFirstVisit ? 1.8 : 0, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className="pointer-events-auto"
                >
                   <Link href="/listing/create" className="h-7 px-2.5 sm:h-8 sm:px-3 md:h-10 md:px-4 bg-white text-black hover:bg-red-600 hover:text-white rounded-lg flex items-center justify-center text-[9px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest transition-all shadow-lg gap-1.5 sm:gap-2">
@@ -281,7 +282,7 @@ function HomePageContent() {
             <motion.p 
               initial={{ opacity: 0 }} 
               animate={{ opacity: introComplete ? 1 : 0 }} 
-              transition={{ delay: 1.5, duration: 1 }} 
+              transition={{ delay: 2, duration: 1.2, ease: [0.22, 1, 0.36, 1] }} 
               className={`text-white/40 mx-4 sm:mx-6 font-medium lowercase tracking-wide text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2 ${introComplete ? "text-right" : "text-center"}`}
             >
                its mine!  
@@ -295,7 +296,7 @@ function HomePageContent() {
           className="hidden md:block fixed top-0 left-0 z-40 pointer-events-auto"
           initial={{ x: -40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: isFirstVisit ? 1.2 : 0 }}
+          transition={{ duration: 0.8, delay: isFirstVisit ? 1.4 : 0, ease: [0.22, 1, 0.36, 1] }}
         >
           <Link
             href={user ? "/profile" : "/auth/login"}
@@ -312,7 +313,7 @@ function HomePageContent() {
           className="md:hidden absolute top-0 left-0 z-40 pointer-events-auto"
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.8, delay: isFirstVisit ? 1.4 : 0, ease: [0.22, 1, 0.36, 1] }}
         >
           <button 
             onClick={() => setShowMobileMenu(true)}
@@ -582,15 +583,7 @@ function HomePageContent() {
         </div>
       </div>
 
-      {/* --- MOBILE HAMBURGER (Floating Action Button) --- */}
-      <div className="md:hidden fixed bottom-4 right-3 z-50">
-        <button 
-          onClick={() => setShowMobileMenu(true)}
-          className="w-12 h-12 bg-white text-black rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.5)] flex items-center justify-center active:scale-95 transition-transform"
-        >
-           <Menu className="w-5 h-5" />
-        </button>
-      </div>
+
 
       {/* --- MOBILE MENU OVERLAY --- */}
       <AnimatePresence>
@@ -617,6 +610,21 @@ function HomePageContent() {
                className="w-full bg-white/10 text-white py-4 rounded-xl text-center font-bold text-sm uppercase active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
              >
                <SlidersHorizontal className="w-4 h-4" /> Filters {showFilters ? '▲' : '▼'}
+             </button>
+
+             {/* Chat Button */}
+             <button 
+               onClick={() => {
+                 setShowMobileMenu(false);
+                 // Trigger chat widget to open
+                 const chatToggle = document.querySelector('.chat-toggle') as HTMLButtonElement;
+                 if (chatToggle) {
+                   chatToggle.click();
+                 }
+               }}
+               className="w-full bg-white/10 text-white py-4 rounded-xl text-center font-bold text-sm uppercase active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+             >
+               <MessageCircle className="w-4 h-4" /> Chat
              </button>
 
              {/* Mobile Search & Filters */}

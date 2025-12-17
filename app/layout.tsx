@@ -15,6 +15,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            /* Hide chat widget floating button on mobile */
+            @media (max-width: 768px) {
+              .chat-toggle {
+                display: none !important;
+              }
+            }
+          `
+        }} />
+      </head>
       <body className="bg-[#121212] text-white antialiased">
         <div className="relative min-h-screen bg-[#121212]">
           {children}

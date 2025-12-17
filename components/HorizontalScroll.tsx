@@ -41,7 +41,7 @@ export default function HorizontalScroll({
     if (!isDragging || !scrollRef.current) return;
 
     const x = e.touches[0].clientX;
-    const walk = (x - startX) * 1.5;
+    const walk = (x - startX) * 1.2; // Smooth scrolling multiplier
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -63,7 +63,7 @@ export default function HorizontalScroll({
 
     e.preventDefault();
     const x = e.clientX;
-    const walk = (x - startX) * 1.5;
+    const walk = (x - startX) * 1.2; // Smooth scrolling multiplier
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -96,10 +96,12 @@ export default function HorizontalScroll({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          className="flex gap-2.5 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 scroll-smooth -mx-1 px-1"
+          className="flex gap-2.5 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1"
           style={{
-            scrollBehavior: "smooth",
+            scrollBehavior: "auto",
             cursor: isDragging ? "grabbing" : "grab",
+            scrollSnapType: "none",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {items.map((item, i) => (
